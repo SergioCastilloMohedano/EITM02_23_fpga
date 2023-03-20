@@ -38,10 +38,10 @@ entity PE_CTR is
         reset_acc         : out std_logic;
         inter_PE_acc      : out std_logic;
         re_rf             : out std_logic;
-        PISO_Buffer_start : out std_logic;
+        PISO_Buffer_start : out std_logic
 
         -- Clock Gating
-        is_stalling  : out std_logic
+--        is_stalling  : out std_logic
     );
 end PE_CTR;
 
@@ -137,7 +137,7 @@ architecture behavioral of PE_CTR is
     signal PISO_BUffer_start_delay : std_logic_vector(0 to RF_READ_LATENCY - 1); -- 040323
 
     -- Clock Gating
-    signal is_stalling_tmp : std_logic;
+--    signal is_stalling_tmp : std_logic;
 
 begin
     -- control path : state register
@@ -158,21 +158,21 @@ begin
         case state_reg is
             when s_init =>
                 state_next <= s_idle_writing;
-                is_stalling_tmp  <= '0'; -- Clock Gating Control
+--                is_stalling_tmp  <= '0'; -- Clock Gating Control
             when s_idle_writing =>
                 if pass_flag_tmp = '1' then
                     state_next <= s_intra_PE_acc;
                 else
                     state_next <= s_idle_writing;
                 end if;
-                is_stalling_tmp  <= '0'; -- Clock Gating Control
+--                is_stalling_tmp  <= '0'; -- Clock Gating Control
             when s_intra_PE_acc =>
                 if (intra_s_reg = (RS_tmp - 1)) then
                     state_next <= s_inter_PE_acc;
                 else
                     state_next <= s_intra_PE_acc;
                 end if;
-                is_stalling_tmp  <= '0'; -- Clock Gating Control
+--                is_stalling_tmp  <= '0'; -- Clock Gating Control
             when s_inter_PE_acc =>
                 if (inter_cnt_done = '1') then
                     if (Y_ID = 1) then
@@ -183,27 +183,27 @@ begin
                 else
                     state_next <= s_inter_PE_acc;
                 end if;
-                is_stalling_tmp  <= '0'; -- Clock Gating Control
+--                is_stalling_tmp  <= '0'; -- Clock Gating Control
             when s_hold =>
                 if (hold_cnt_done = '1') then
                     if (j_cnt_done = '1') then
                         state_next <= s_stall;
-                        is_stalling_tmp  <= '1'; -- Clock Gating Control
+--                        is_stalling_tmp  <= '1'; -- Clock Gating Control
                     else
                         state_next <= s_intra_PE_acc;
-                        is_stalling_tmp  <= '0'; -- Clock Gating Control
+--                        is_stalling_tmp  <= '0'; -- Clock Gating Control
                     end if;
                 else
                     state_next <= s_hold;
-                    is_stalling_tmp  <= '0'; -- Clock Gating Control
+--                    is_stalling_tmp  <= '0'; -- Clock Gating Control
                 end if;
             when s_reset_acc =>
                 if (j_cnt_done = '1') then
                     state_next <= s_stall;
-                    is_stalling_tmp  <= '1'; -- Clock Gating Control
+--                    is_stalling_tmp  <= '1'; -- Clock Gating Control
                 else
                     state_next <= s_intra_PE_acc;
-                    is_stalling_tmp  <= '0'; -- Clock Gating Control
+--                    is_stalling_tmp  <= '0'; -- Clock Gating Control
                 end if;
             when s_stall =>
                 if (stall_cnt_done = '1') then
@@ -212,17 +212,17 @@ begin
                     else
                         state_next <= s_intra_PE_acc;
                     end if;
-                    is_stalling_tmp  <= '0'; -- Clock Gating Control
+--                    is_stalling_tmp  <= '0'; -- Clock Gating Control
                 else
                     state_next <= s_stall;
-                    is_stalling_tmp  <= '1'; -- Clock Gating Control
+--                    is_stalling_tmp  <= '1'; -- Clock Gating Control
                 end if;
             when s_finished =>
                 state_next <= s_idle_writing;
-                is_stalling_tmp  <= '0'; -- Clock Gating Control
+--                is_stalling_tmp  <= '0'; -- Clock Gating Control
             when others =>
                 state_next <= s_init;
-                is_stalling_tmp  <= '0'; -- Clock Gating Control
+--                is_stalling_tmp  <= '0'; -- Clock Gating Control
         end case;
     end process;
 
@@ -230,10 +230,6 @@ begin
     stall_cnt <= (EF_tmp - 1) - RS_tmp - RS_tmp + 1;
 
     -- control path : output logic
---    reset_acc_tmp    <= '1' when ((state_reg = s_reset_acc) or ((state_reg = s_inter_PE_acc) and (Y_ID /= 1))) else '0';
---    inter_PE_acc_tmp <= '1' when (state_reg = s_inter_PE_acc) else '0';
-    -- ** Clock Gating **
---    is_stalling_tmp  <= '1' when state_reg = s_stall else '0';
     PISO_BUffer_start_tmp <= '1' when ((state_reg = s_reset_acc) and (Y_ID = 1) and (X_ID = 1)) else '0'; -- 040323
     reset_acc_tmp         <= '1' when ((state_reg = s_reset_acc) or (state_reg = s_init) or (state_reg = s_idle_writing) or ((state_reg = s_inter_PE_acc) and (Y_ID /= 1))) else '0';
     inter_PE_acc_tmp      <= '1' when ((state_reg = s_inter_PE_acc) or (state_reg = s_idle_writing) or (state_reg = s_init)) else '0';
@@ -578,7 +574,7 @@ begin
     inter_PE_acc                <= inter_PE_acc_delay(inter_PE_acc_delay'high);
     reset_acc                   <= reset_acc_delay(reset_acc_delay'high);
     re_rf                       <= re_rf_tmp;
-    is_stalling                 <= is_stalling_tmp;
+--    is_stalling                 <= is_stalling_tmp;
     PISO_Buffer_start           <= PISO_Buffer_start_delay(PISO_Buffer_start_delay'high); -- 040323
 
     -- Other Logic

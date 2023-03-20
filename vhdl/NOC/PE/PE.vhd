@@ -74,10 +74,10 @@ architecture structural of PE is
     signal accumulator_reg  : signed(PSUM_BITWIDTH - 1 downto 0);
     signal accumulator_next : signed(PSUM_BITWIDTH - 1 downto 0);
 
-    -- Clock Gating
-    signal is_stalling_tmp : std_logic;
-    signal enable_cg       : std_logic;
-    signal clk_cg          : std_logic;
+    -- -- Clock Gating
+    -- signal is_stalling_tmp : std_logic;
+    -- signal enable_cg       : std_logic;
+    -- signal clk_cg          : std_logic;
 
     -- To PISO Buffer
     signal PISO_Buffer_start_tmp : std_logic; -- 040323
@@ -155,20 +155,20 @@ architecture structural of PE is
             reset_acc         : out std_logic;
             inter_PE_acc      : out std_logic;
             re_rf             : out std_logic;
-            PISO_Buffer_start : out std_logic;
+            PISO_Buffer_start : out std_logic
 
             -- Clock Gating
-            is_stalling  : out std_logic
+--            is_stalling  : out std_logic
         );
     end component;
 
-    component my_CG_MOD is
-    port (
-        ck_in  : in std_logic;
-        enable : in std_logic;
-        ck_out : out std_logic
-        );
-    end component;
+    -- component my_CG_MOD is
+    -- port (
+    --     ck_in  : in std_logic;
+    --     enable : in std_logic;
+    --     ck_out : out std_logic
+    --     );
+    -- end component;
 
 begin
 
@@ -179,8 +179,8 @@ begin
         BITWIDTH        => ACT_BITWIDTH
     )
     port map(
---        clk         => clk,
-        clk         => clk_cg,
+        clk         => clk,
+--        clk         => clk_cg,
         reset       => reset,
         clear       => '0',
         reg_sel     => unsigned(ifm_rf_addr),
@@ -197,8 +197,8 @@ begin
         BITWIDTH        => WEIGHT_BITWIDTH
     )
     port map(
---        clk         => clk,
-        clk         => clk_cg,
+        clk         => clk,
+--        clk         => clk_cg,
         reset       => reset,
         clear       => '0',
         reg_sel     => unsigned(w_rf_addr),
@@ -234,42 +234,28 @@ begin
         reset_acc               => reset_acc,
         inter_PE_acc            => inter_PE_acc,
         re_rf                   => re_rf,
-        PISO_Buffer_start       => PISO_Buffer_start_tmp, -- 040323
-        is_stalling             => is_stalling_tmp
+        PISO_Buffer_start       => PISO_Buffer_start_tmp -- 040323
+--        is_stalling             => is_stalling_tmp
     );
 
-    -- Clock Gating
-    enable_cg_proc : process (OFM_NL_Read, is_stalling_tmp)
-    begin
-        if ((OFM_NL_Read = '0') and (is_stalling_tmp = '0')) then
-            enable_cg <= '1';
-        else
-            enable_cg <= '0';
-        end if;
-    end process;
---    enable_cg <= not(not(OFM_NL_Read) and not(is_stalling_tmp));
+    -- -- Clock Gating
+    -- enable_cg_proc : process (OFM_NL_Read, is_stalling_tmp)
+    -- begin
+    --     if ((OFM_NL_Read = '0') and (is_stalling_tmp = '0')) then
+    --         enable_cg <= '1';
+    --     else
+    --         enable_cg <= '0';
+    --     end if;
+    -- end process;
 
-    my_CG_MOD_inst : my_CG_MOD
-    port map(
-        ck_in  => clk,
-        enable => enable_cg,
-        ck_out => clk_cg
-    );
+    -- my_CG_MOD_inst : my_CG_MOD
+    -- port map(
+    --     ck_in  => clk,
+    --     enable => enable_cg,
+    --     ck_out => clk_cg
+    -- );
 
     -- MAC Registers
---    REG_PROC : process (clk, reset)
---    begin
---        if rising_edge(clk) then
---            if (reset = '1') then
---                accumulator_reg <= (others => '0');
---                in_psum_reg     <= (others => '0');
---            else
---                accumulator_reg <= accumulator_next; -- Acc. reg.
---                in_psum_reg     <= signed(psum_in); -- In psum reg.
---            end if;
---        end if;
---    end process;
-
     ACC_REG_PROC : process (clk, reset)
     begin
         if rising_edge(clk) then
