@@ -38,7 +38,7 @@ architecture dataflow of SRAM_IFM_FRONT_END_READ is
 
 begin
 
-    pad_tmp      <= to_integer(shift_right((unsigned(RS) - to_unsigned(1, 8)), 1)); -- padding = (-1 + RS)/2
+    pad_tmp      <= to_integer(shift_right((unsigned(RS) - to_unsigned(1, HYP_BITWIDTH)), 1)); -- padding = (-1 + RS)/2
     h_ctrl       <= '1' when ((h_p_tmp < pad_tmp) or (h_p_tmp > (HW_tmp - 1 + pad_tmp))) else '0';
     w_ctrl       <= '1' when ((w_p_tmp < pad_tmp) or (w_p_tmp > (HW_tmp - 1 + pad_tmp))) else '0';
 

@@ -18,11 +18,10 @@ entity SRAM_IFM_BACK_END is
         WE_FE    : in std_logic;
 
         -- SRAM Wrapper Ports (ASIC)
-        A     : out std_logic_vector(12 downto 0);
+        A     : out std_logic_vector(ACT_ADDRESSES - 1 downto 0);
         CSN   : out std_logic;
-        D     : out std_logic_vector (31 downto 0);
-        INITN : out std_logic;
-        Q     : in std_logic_vector (31 downto 0);
+        D     : out std_logic_vector (ACT_WORDLENGTH - 1 downto 0);
+        Q     : in std_logic_vector (ACT_WORDLENGTH - 1 downto 0);
         WEN   : out std_logic
     );
 end SRAM_IFM_BACK_END;
@@ -50,12 +49,10 @@ architecture behavioral of SRAM_IFM_BACK_END is
 
     ------------ DATA PATH SIGNALS ------------
     ---- Data Registers Signals
-    signal addr_r_reg, addr_r_next       : unsigned (12 downto 0);
-    signal addr_w_reg, addr_w_next       : unsigned (12 downto 0);
+    signal addr_r_reg, addr_r_next       : unsigned (ACT_ADDRESSES - 1 downto 0);
+    signal addr_w_reg, addr_w_next       : unsigned (ACT_ADDRESSES - 1 downto 0);
     signal buff_reg, buff_next           : std_logic_vector (ACT_BITWIDTH - 1 downto 0);
     signal wea_cnt_reg, wea_cnt_next     : unsigned (1 downto 0);
-    signal INITN_reg, INITN_next         : std_logic;
-    signal initn_cnt_reg, initn_cnt_next : unsigned (1 downto 0);
 
     ---- External Control Signals used to control Data Path Operation (they do NOT modify next state outcome)
     -- ..
@@ -63,14 +60,12 @@ architecture behavioral of SRAM_IFM_BACK_END is
     ---- Functional Units Intermediate Signals
     signal wea_cnt_out, wea_cnt_tmp : unsigned (1 downto 0);
     signal WEN_tmp                  : std_logic;
-    signal INITN_out                : std_logic;
-    signal initn_cnt_out            : unsigned (1 downto 0);
 
     ---- Data Outputs
     signal ifm_FE_r_tmp          : std_logic_vector (ACT_BITWIDTH - 1 downto 0);
     signal CSN_r, CSN_w, CSN_tmp : std_logic;
-    signal A_tmp                 : unsigned (12 downto 0);
-    signal Q_tmp                 : std_logic_vector (31 downto 0);
+    signal A_tmp                 : unsigned (ACT_ADDRESSES - 1 downto 0);
+    signal Q_tmp                 : std_logic_vector (ACT_WORDLENGTH - 1 downto 0);
 
     -- SRAM_IFM_BACK_END Intermediate Signals
     -- ..
@@ -137,15 +132,11 @@ begin
                 addr_w_reg      <= (others => '0');
                 buff_reg        <= (others => '0');
                 wea_cnt_reg     <= (others => '0');
-                INITN_reg       <= '1';
-                initn_cnt_reg   <= (others => '0');
             else
                 addr_r_reg      <= addr_r_next;
                 addr_w_reg      <= addr_w_next;
                 buff_reg        <= buff_next;
                 wea_cnt_reg     <= wea_cnt_next;
-                INITN_reg       <= INITN_next;
-                initn_cnt_reg   <= initn_cnt_next;
 
             end if;
         end if;
@@ -166,13 +157,8 @@ begin
 
     buff_next <= ifm_FE_w when ((wea_cnt_reg = "00") and (WE_FE = '1')) else buff_reg;
 
-    initn_cnt_out <= initn_cnt_reg when initn_cnt_reg = "11" else initn_cnt_reg + "1";
-    initn_out     <= '1' when initn_cnt_reg = "00" else
-                     '1' when initn_cnt_reg = "11" else
-                     '0';
-        
     -- data path : mux routing
-    data_mux : process (state_reg, Q_tmp, addr_r_reg, wea_cnt_reg, wea_cnt_out, addr_w_reg, WE_FE, initn_cnt_reg, initn_reg, initn_cnt_out, initn_out)
+    data_mux : process (state_reg, Q_tmp, addr_r_reg, wea_cnt_reg, wea_cnt_out, addr_w_reg, WE_FE)
     begin
         case state_reg is
             when s_init             =>
@@ -182,9 +168,6 @@ begin
                 wea_cnt_next <= wea_cnt_reg;
                 addr_w_next  <= addr_w_reg;
 
-                initn_cnt_next <= initn_cnt_reg;
-                initn_next     <= initn_reg;
-
             when s_idle             =>
                 ifm_FE_r_tmp <= (others => '0');
                 addr_r_next  <= addr_r_reg;
@@ -192,28 +175,19 @@ begin
                 wea_cnt_next <= wea_cnt_reg;
                 addr_w_next  <= addr_w_reg;
 
-                initn_cnt_next <= initn_cnt_out;
-                initn_next     <= initn_out;
-
             when s_0 =>
-                ifm_FE_r_tmp <= Q_tmp (31 downto 16);
+                ifm_FE_r_tmp <= Q_tmp ((ACT_BITWIDTH*2 - 1) downto ACT_BITWIDTH);
                 addr_r_next  <= addr_r_reg + 1;
 
                 wea_cnt_next <= wea_cnt_reg;
                 addr_w_next  <= addr_w_reg;
 
-                initn_cnt_next <= initn_cnt_reg;
-                initn_next     <= initn_reg;
-
             when s_1 =>
-                ifm_FE_r_tmp <= Q_tmp (15 downto 0);
+                ifm_FE_r_tmp <= Q_tmp ((ACT_BITWIDTH - 1) downto 0);
                 addr_r_next  <= addr_r_reg;
 
                 wea_cnt_next <= wea_cnt_reg;
                 addr_w_next  <= addr_w_reg;
-
-                initn_cnt_next <= initn_cnt_reg;
-                initn_next     <= initn_reg;
 
             when s_write            =>
                 ifm_FE_r_tmp <= (others => '0');
@@ -227,9 +201,6 @@ begin
                     addr_w_next <= addr_w_reg;
                 end if;
 
-                initn_cnt_next <= initn_cnt_reg;
-                initn_next     <= initn_reg;
-
             when s_finished         =>
                 ifm_FE_r_tmp <= (others => '0');
                 addr_r_next  <= (others => '0');
@@ -237,18 +208,12 @@ begin
                 wea_cnt_next <= (others => '0');
                 addr_w_next  <= (others => '0');
 
-                initn_cnt_next <= initn_cnt_reg;
-                initn_next     <= initn_reg;
-
             when others             =>
                 ifm_FE_r_tmp <= (others => '0');
                 addr_r_next  <= addr_r_reg;
 
                 wea_cnt_next <= wea_cnt_reg;
                 addr_w_next  <= addr_w_reg;
-
-                initn_cnt_next <= initn_cnt_reg;
-                initn_next     <= initn_reg;
 
         end case;
     end process;
@@ -267,6 +232,5 @@ begin
     A     <= std_logic_vector(A_tmp);
     D     <= buff_reg & ifm_FE_w;
     WEN   <= WEN_tmp;
-    INITN <= INITN_reg;
 
 end architecture;

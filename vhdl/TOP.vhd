@@ -12,7 +12,7 @@ entity TOP is
         hw_log2_EF            : integer_array := hw_log2_EF_PKG;
         NUM_REGS_IFM_REG_FILE : natural       := NUM_REGS_IFM_REG_FILE_PKG;             -- W' max (conv0 and conv1)
         NUM_REGS_W_REG_FILE   : natural       := NUM_REGS_W_REG_FILE_PKG;             -- p*S = 8*3 = 24
-        ADDR_4K_CFG           : natural       := ADDR_4K_CFG_PKG            -- First Address of the reserved space for config. parameters.
+        ADDR_CFG           : natural       := ADDR_CFG_PKG            -- First Address of the reserved space for config. parameters.
     );
     port (
         clk         : in std_logic;
@@ -153,7 +153,7 @@ architecture structural of TOP is
 
     component SRAM_WB is
         generic (
-            ADDR_4K_CFG : natural := ADDR_4K_CFG_PKG           -- First Address of the reserved space for config. parameters.
+            ADDR_CFG : natural := ADDR_CFG_PKG           -- First Address of the reserved space for config. parameters.
         );
         port (
             clk            : in std_logic;
@@ -348,7 +348,7 @@ begin
     -- SRAM_WB
     SRAM_WB_inst : SRAM_WB
     generic map(
-        ADDR_4K_CFG => ADDR_4K_CFG_PKG
+        ADDR_CFG => ADDR_CFG_PKG
     )
     port map(
         clk            => clk,

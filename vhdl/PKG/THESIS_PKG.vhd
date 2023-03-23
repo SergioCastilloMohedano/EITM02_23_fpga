@@ -1,31 +1,69 @@
--- LOG:
--- I have to constrain second dimension otherwise I can't simulate (vhdl 2008 implementation is not ready for simulation)
--- Check https://support.xilinx.com/s/article/71725?language=en_US
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use IEEE.math_real.all;
 
 package thesis_pkg is
 
+    -- CNN Parameters (shall be changed if a different CNN is to be run)
+    ---- This parameters configure the bitwidths along the datapath and
+    ---- computation path of the whole accelerator.act_2D_array
+    constant RS_max_PKG      : natural := 3;
+    constant r_max_PKG       : natural := 1;
+    constant C_max_PKG       : natural := 1;
+    constant M_max_PKG       : natural := 8;
+    constant EF_max_PKG      : natural := 8;
+    constant EF_log2_max_PKG : natural := natural(log2(real(EF_max_PKG)));
+    constant padding_PKG     : natural := (-1 + RS_max_PKG)/2;
+    constant HW_p_max_PKG    : natural := EF_max_PKG + 2 * padding_PKG;
+    constant p_PKG           : natural := 4;
+    constant layers_PKG      : natural := 1; -- # no of (conv.) layers in the CNN
+
     -- HW Parameters, at synthesis time.
-    constant X_PKG                     : natural       := 32;
-    constant Y_PKG                     : natural       := 3;
+    constant X_PKG : natural := 8;
+    constant Y_PKG : natural := 3;
     type integer_array is array(natural range <>) of integer; -- Array Definition
     constant hw_log2_r_PKG             : integer_array := (0, 1, 2);
-    constant hw_log2_EF_PKG            : integer_array := (5, 4, 3);
-    constant NUM_REGS_IFM_REG_FILE_PKG : natural       := 34;             -- W' max (conv0 and conv1)
-    constant NUM_REGS_W_REG_FILE_PKG   : natural       := 24;             -- p*S = 8*3 = 24
-    constant ADDR_4K_CFG_PKG           : natural       := 4042;            -- First Address of the reserved space for config. parameters.
-    constant NUM_OF_PARAMS_PKG         : natural       := 13;             -- Number of parameters to set for each layer (M, C, EF, RS, r, p, ...)
+    constant hw_log2_EF_PKG            : integer_array := (EF_log2_max_PKG, EF_log2_max_PKG - 1, EF_log2_max_PKG - 2);
+    constant NUM_REGS_IFM_REG_FILE_PKG : natural       := HW_p_max_PKG;       -- W' max (conv0 and conv1)
+    constant NUM_REGS_W_REG_FILE_PKG   : natural       := p_PKG * RS_max_PKG; -- p*S = 8*3 = 24
+    constant NUM_OF_PARAMS_PKG         : natural       := 13;                 -- Number of parameters to set for each layer (M, C, EF, RS, r, p, ...)
 
     -- **** TYPE DECLARATIONS ****
-    constant ACT_BITWIDTH : natural := 16;
-    constant WEIGHT_BITWIDTH : natural := 8;
-    constant BIAS_BITWIDTH : natural := 16;
-    constant PSUM_BITWIDTH  : natural := 28; -- determines bitwidth of the psum considering worst case scenario accumulations -> ceil(log2(R*S*2^WEIGHT_BITWIDTH*2^ACT_BITWIDTH)) = ceil(27.17) = 28
-    constant OFMAP_P_BITWIDTH : natural := 30; -- Bitwidth of Adder Tree -> ceil(log2(r*R*S*(2^WEIGHT_BITWIDTH*2^ACT_BITWIDTH))) -> r = 4 -> 28 + 2
-    constant OFMAP_BITWIDTH : natural := 34; -- determines bitwidth of the ofmap, once all ofmap primitives have been accumulated, for worst case scenario -> max(ceil(log2(Cconv*R*S*2^WEIGHT_BITWIDTH*2^ACT_BITWIDTH) = 34 , ceil(log2(Cfc*2^WEIGHT_BITWIDTH*2^ACT_BITWIDTH)))
-    constant HYP_BITWIDTH : natural := 8;
+    constant ACT_BITWIDTH     : natural := 16;
+    constant WEIGHT_BITWIDTH  : natural := 8;
+    constant BIAS_BITWIDTH    : natural := 16;
+    constant PSUM_BITWIDTH    : natural := natural(ceil(log2(real(RS_max_PKG * RS_max_PKG * 2 ** (WEIGHT_BITWIDTH) * 2 ** (ACT_BITWIDTH)))));                         -- determines bitwidth of the psum considering worst case scenario accumulations
+    constant OFMAP_P_BITWIDTH : natural := natural(ceil(log2(real(r_max_PKG * RS_max_PKG * RS_max_PKG * 2 ** (WEIGHT_BITWIDTH) * 2 ** (ACT_BITWIDTH)))));             -- Bitwidth of Adder Tree
+    constant OFMAP_BITWIDTH   : natural := natural(ceil(log2(real(C_max_PKG * r_max_PKG * RS_max_PKG * RS_max_PKG * 2 ** (WEIGHT_BITWIDTH) * 2 ** (ACT_BITWIDTH))))); -- determines bitwidth of the ofmap, once all ofmap primitives have been accumulated, for worst case scenario
+    constant HYP_BITWIDTH     : natural := 8;
+
+    -- *** Fixed-Point Quantization Scheme: q<i.f> ***
+    constant q_w        : natural := WEIGHT_BITWIDTH;
+    constant f_w        : natural := 5;
+    constant i_w        : natural := q_w - f_w;
+    constant q_act      : natural := ACT_BITWIDTH;
+    constant f_act      : natural := 10;
+    constant i_act      : natural := q_act - f_act;
+    constant q_ofmap    : natural := OFMAP_BITWIDTH;
+    constant f_ofmap    : natural := f_w + f_act;
+    constant i_ofmap    : natural := q_ofmap - f_ofmap;
+    constant q_bias     : natural := BIAS_BITWIDTH;
+    constant f_bias     : natural := 13;
+    constant i_bias     : natural := q_bias - f_bias;
+    constant align      : natural := abs(f_ofmap - f_bias); -- # of LSBs to be added to the bias prior to add it to the ofmap. Notice that f_ofmap MUST be greater than f_bias.
+    constant trunc_high : integer := f_ofmap + i_act - 1;   -- For truncating ofmaps in RN_ReLU Block
+    constant trunc_low  : integer := f_ofmap - f_act;       -- For truncating ofmaps in RN_ReLU Block
+    -- ***********************************************
+
+    -- *** Memories Interfaces ***
+    constant OFMAP_WORDLENGTH : natural := OFMAP_BITWIDTH;
+    constant OFMAP_ADDRESSES  : natural := natural(ceil(log2(real(M_max_PKG * EF_max_PKG * EF_max_PKG))));
+    constant WB_WORDLENGTH    : natural := 32;
+    constant WB_ADDRESSES     : natural := natural(ceil(log2(real((C_max_PKG * M_max_PKG * RS_max_PKG * RS_max_PKG)/(WB_WORDLENGTH/WEIGHT_BITWIDTH) + (M_max_PKG)/(WB_WORDLENGTH/BIAS_BITWIDTH) + layers_PKG * ((NUM_OF_PARAMS_PKG - 1)/(WB_WORDLENGTH/HYP_BITWIDTH)) + 1)))); -- Depends on CNN, unless changed later if layer-by-layer basis, in which case I'd need space for largest layer.
+    constant ACT_WORDLENGTH   : natural := 32;
+    constant ACT_ADDRESSES    : natural := natural(ceil(log2(real((M_max_PKG * EF_max_PKG/2 * EF_max_PKG/2)/(ACT_WORDLENGTH/ACT_BITWIDTH))))); -- Output of Max. Pooling (8*4*4)
+    constant ADDR_CFG_PKG     : natural := natural(ceil(log2(real((C_max_PKG * M_max_PKG * RS_max_PKG * RS_max_PKG)/(WB_WORDLENGTH/WEIGHT_BITWIDTH) + (M_max_PKG)/(WB_WORDLENGTH/BIAS_BITWIDTH))))); -- First Address of the reserved space for config. parameters.
 
     type weight_array is array (natural range <>) of std_logic_vector(WEIGHT_BITWIDTH - 1 downto 0);
     type weight_2D_array is array (natural range <>) of weight_array;
@@ -33,7 +71,7 @@ package thesis_pkg is
     type act_2D_array is array (natural range <>) of act_array;
 
     type hyp_array is array(natural range <>) of std_logic_vector(HYP_BITWIDTH - 1 downto 0);
-    
+
     type std_logic_array is array(natural range <>) of std_logic;
     type std_logic_2D_array is array(natural range <>) of std_logic_array;
     type psum_array is array(natural range <>) of std_logic_vector(PSUM_BITWIDTH - 1 downto 0);
@@ -85,16 +123,6 @@ package thesis_pkg is
     --------------------------------------------------------------------------------------
     -- **** COMPONENT DECLARATIONS ****
 
-
-    -- Clock Gating
---    component my_CG_MOD is
---        port (
---            ck_in  : in std_logic;
---            enable : in std_logic;
---            ck_out : out std_logic
---        );
---    end component;
-
     -- Ceil of log2 div
     --------------------------------------------------------------------------------------
     -- Inputs "x", an integer number as std_logic_vector and divides it by 2^y. Being "y"
@@ -117,7 +145,7 @@ package thesis_pkg is
     component mux is
         generic (
             LEN : natural := HYP_BITWIDTH; -- Bits in each input (must be 8 due to data type definition being constrained to 8).
-            NUM : natural -- Number of inputs
+            NUM : natural                  -- Number of inputs
         );
         port (
             mux_in  : in hyp_array(0 to NUM - 1);
@@ -208,43 +236,6 @@ package body thesis_pkg is
 
     end function ceil_log2div;
 end thesis_pkg;
-
-
-------------------------------------------------------------------------------
--- Clock Gating
-------------------------------------------------------------------------------
---library ieee;
---use ieee.std_logic_1164.all;
---use ieee.numeric_std.all;
---use work.thesis_pkg.all;
-
---entity my_CG_MOD is
---    port (
---        ck_in  : in std_logic;
---        enable : in std_logic;
---        ck_out : out std_logic
---    );
---end my_CG_MOD;
-
---architecture behavioral of my_CG_MOD is
-
---    signal clk_in_n     : std_logic;
---    signal enable_latch : std_logic;
-
---begin
-
---    clk_in_n <= not ck_in;
-
---    process (clk_in_n, enable) is
---    begin
---        if (clk_in_n = '1') then
---            enable_latch <= enable;
---        end if;
---    end process;
-
---    ck_out <= ck_in and enable_latch;
-
---end architecture;
 
 ------------------------------------------------------------------------------
 -- Ceil of log 2 div

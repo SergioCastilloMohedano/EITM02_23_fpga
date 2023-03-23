@@ -39,12 +39,11 @@ architecture structural of SRAM_IFM is
     signal ifm_w_tmp           : std_logic_vector (ACT_BITWIDTH - 1 downto 0);
     signal en_w_tmp            : std_logic;
     signal WE_tmp              : std_logic;
-    signal A_tmp               : std_logic_vector (12 downto 0);
+    signal A_tmp               : std_logic_vector (ACT_ADDRESSES - 1 downto 0);
     signal CSN_tmp             : std_logic;
-    signal D_tmp               : std_logic_vector (31 downto 0);
-    signal INITN_tmp           : std_logic;
-    signal Q_tmp               : std_logic_vector (31 downto 0);
-    signal WEN_tmp             : std_logic;
+    signal D_tmp               : std_logic_vector (ACT_WORDLENGTH - 1 downto 0);
+    signal Q_tmp               : std_logic_vector (ACT_WORDLENGTH - 1 downto 0);
+    signal WEN_tmp             : std_logic_vector (0 downto 0);
 
     -- COMPONENT DECLARATIONS
     component SRAM_IFM_FRONT_END_READ is
@@ -89,26 +88,25 @@ architecture structural of SRAM_IFM is
             ifm_FE_w : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
             en_w     : in std_logic;
             WE_FE    : in std_logic;
-            -- SRAM Wrapper Ports (ASIC)
-            A     : out std_logic_vector(12 downto 0);
-            CSN   : out std_logic;
-            D     : out std_logic_vector (31 downto 0);
-            INITN : out std_logic;
-            Q     : in std_logic_vector (31 downto 0);
-            WEN   : out std_logic
+            -- SRAM Wrapper Ports
+            A   : out std_logic_vector(ACT_ADDRESSES - 1 downto 0);
+            CSN : out std_logic;
+            D   : out std_logic_vector (ACT_WORDLENGTH - 1 downto 0);
+            Q   : in std_logic_vector (ACT_WORDLENGTH - 1 downto 0);
+            WEN : out std_logic
         );
     end component;
 
---    component ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_3
-    component ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper
+    component IFM_BRAM is
         port (
-            A     : in std_logic_vector(12 downto 0);
-            CK    : in std_logic;
-            CSN   : in std_logic;
-            D     : in std_logic_vector (31 downto 0);
-            INITN : in std_logic;
-            Q     : out std_logic_vector (31 downto 0);
-            WEN   : in std_logic
+            clka      : in std_logic;
+            rsta      : in std_logic;
+            ena       : in std_logic;
+            wea       : in std_logic_vector(0 downto 0);
+            addra     : in std_logic_vector(5 downto 0);
+            dina      : in std_logic_vector(31 downto 0);
+            douta     : out std_logic_vector(31 downto 0);
+            rsta_busy : out std_logic
         );
     end component;
 
@@ -157,22 +155,21 @@ begin
         A        => A_tmp,
         CSN      => CSN_tmp,
         D        => D_tmp,
-        INITN    => INITN_tmp,
         Q        => Q_tmp,
-        WEN      => WEN_tmp
+        WEN      => WEN_tmp(0)
     );
 
-    -- ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_3
---    ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_inst_3 : ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_3 -- (to allow separate .cde read)
-    ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_inst_3 : ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper -- (for post-synthesis sim -will be wrong- and power calculations)
+    -- IFM_BRAM
+    IFM_BRAM_inst : IFM_BRAM
     port map(
-        CK    => clk,
-        A     => A_tmp,
-        CSN   => CSN_tmp,
-        D     => D_tmp,
-        INITN => INITN_tmp,
-        Q     => Q_tmp,
-        WEN   => WEN_tmp
+        clka      => clk,
+        rsta      => reset,
+        ena       => not(CSN_tmp),
+        wea       => not(WEN_tmp),
+        addra     => A_tmp,
+        dina      => D_tmp,
+        douta     => Q_tmp,
+        rsta_busy => open
     );
 
     -- PORT ASSIGNATIONS
