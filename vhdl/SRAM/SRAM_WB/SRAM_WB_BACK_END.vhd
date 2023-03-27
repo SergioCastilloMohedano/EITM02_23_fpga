@@ -39,6 +39,7 @@ architecture behavioral of SRAM_WB_BACK_END is
     -- ..
 
     ---- External Command Signals to the FSMD
+    signal en_w_read_reg   : std_logic;
     signal en_w_read_tmp   : std_logic;
     signal en_b_read_tmp   : std_logic;
     signal en_cfg_read_tmp : std_logic;
@@ -52,7 +53,8 @@ architecture behavioral of SRAM_WB_BACK_END is
 
     ------------ DATA PATH SIGNALS ------------
     ---- Data Registers Signals
-    signal addr_w_ctrl_reg, addr_w_ctrl_next     : natural range 0 to 3;
+    -- signal addr_w_ctrl_reg, addr_w_ctrl_next     : natural range 0 to 3;
+    signal addr_w_ctrl_reg, addr_w_ctrl_next     : natural range 0 to 2;
     signal addr_w_reg, addr_w_next               : unsigned (WB_ADDRESSES - 1 downto 0);
     signal addr_b_ctrl_reg, addr_b_ctrl_next     : std_logic;
     signal addr_b_reg, addr_b_next               : unsigned (WB_ADDRESSES - 1 downto 0);
@@ -155,6 +157,7 @@ begin
     begin
         if rising_edge(clk) then
             if reset = '1' then
+                en_w_read_reg   <= '0';
                 addr_w_ctrl_reg <= 0;
                 addr_w_reg      <= (others => '0');
 
@@ -165,6 +168,7 @@ begin
                 addr_cfg_reg      <= to_unsigned((ADDR_CFG_PKG), WB_ADDRESSES);
 
             else
+                en_w_read_reg   <= en_w_read_tmp;
                 addr_w_ctrl_reg <= addr_w_ctrl_next;
                 addr_w_reg      <= addr_w_next;
 
@@ -179,7 +183,8 @@ begin
     end process;
 
     -- data path : functional units (perform necessary arithmetic operations)
-    addr_w_out <= (addr_w_reg + 1) when (addr_w_ctrl_reg = 3) else addr_w_reg;
+    -- addr_w_out <= (addr_w_reg + 1) when (addr_w_ctrl_reg = 3) else addr_w_reg;
+    addr_w_out <= (addr_w_reg + 1) when (addr_w_ctrl_reg = 2) else addr_w_reg;
 
     -- Bias addresses start at the last memory position (before reserved space), and decreases as pm increases from 0 to M - 1.
     -- Address decreases with changes in NoC_pm value.
@@ -202,24 +207,27 @@ begin
     -- ..
 
     -- data path : Output Logic
-    A_tmp <= std_logic_vector(addr_w_next) when (state_reg = s_read_w) else
-        std_logic_vector(addr_b_next) when (state_reg = s_read_b) else
-        std_logic_vector(addr_cfg_next) when (en_cfg_read_tmp = '1') else
-        (others => '0');
+    A_tmp <= std_logic_vector(addr_b_next)   when (state_reg = s_read_b) else  -- biases
+             std_logic_vector(addr_cfg_next) when (en_cfg_read_tmp = '1') else -- cfg
+             std_logic_vector(addr_w_next);                                    -- weights
 
-    CSN_tmp <= not(en_w_read_tmp) when (state_reg = s_read_w) else
-        not(en_b_read_tmp) when (state_reg = s_read_b) else
-        not(en_cfg_read_tmp) when (en_cfg_read_tmp = '1') else
-        '1';
+    CSN_tmp <= not(en_b_read_tmp)   when (state_reg = s_read_b) else  -- biases
+               not(en_cfg_read_tmp) when (en_cfg_read_tmp = '1') else -- cfg
+               not(en_w_read_tmp);                                    -- weights
 
     WEN_tmp <= '1'; --tbd when write, by the moment, always to 1
 
     zeroes                                 <= (others => '0');
+    -- with addr_w_ctrl_reg select weight_tmp <=
+    --    Q_w_tmp((WEIGHT_BITWIDTH * 4 - 1) downto (WEIGHT_BITWIDTH * 3)) & zeroes when 0,
+    --    Q_w_tmp((WEIGHT_BITWIDTH * 3 - 1) downto (WEIGHT_BITWIDTH * 2)) & zeroes when 1,
+    --    Q_w_tmp((WEIGHT_BITWIDTH * 2 - 1) downto (WEIGHT_BITWIDTH)) & zeroes when 2,
+    --    Q_w_tmp((WEIGHT_BITWIDTH - 1) downto 0) & zeroes when 3,
+    --    (others => '0') when others;
     with addr_w_ctrl_reg select weight_tmp <=
-        Q_w_tmp((WEIGHT_BITWIDTH * 4 - 1) downto (WEIGHT_BITWIDTH * 3)) & zeroes when 0,
-        Q_w_tmp((WEIGHT_BITWIDTH * 3 - 1) downto (WEIGHT_BITWIDTH * 2)) & zeroes when 1,
-        Q_w_tmp((WEIGHT_BITWIDTH * 2 - 1) downto (WEIGHT_BITWIDTH)) & zeroes when 2,
-        Q_w_tmp((WEIGHT_BITWIDTH - 1) downto 0) & zeroes when 3,
+        Q_w_tmp((WEIGHT_BITWIDTH * 3 - 1) downto (WEIGHT_BITWIDTH * 2)) & zeroes when 0,
+        Q_w_tmp((WEIGHT_BITWIDTH * 2 - 1) downto (WEIGHT_BITWIDTH * 1)) & zeroes when 1,
+        Q_w_tmp((WEIGHT_BITWIDTH * 1 - 1) downto (0)) & zeroes when 2,
         (others => '0') when others;
 
     Q_w_tmp <= Q when (state_reg = s_read_w) else
@@ -245,7 +253,7 @@ begin
         bias_tmp when (state_reg = s_read_b) else
         (others => '0');
     -- data path : mux routing
-    data_mux : process (state_reg, addr_w_ctrl_reg, addr_w_reg, addr_b_reg, addr_w_out, addr_b_out, addr_b_ctrl_reg, NoC_pm_reg, NoC_pm_next, en_b_read_tmp, addr_cfg_ctrl_reg, addr_cfg_reg, addr_cfg_out)
+    data_mux : process (state_reg, addr_w_ctrl_reg, addr_w_reg, addr_b_reg, addr_w_out, addr_b_out, addr_b_ctrl_reg, NoC_pm_reg, NoC_pm_next, en_b_read_tmp, addr_cfg_ctrl_reg, addr_cfg_reg, addr_cfg_out, en_w_read_reg, en_w_read_tmp)
     begin
         case state_reg is
             when s_init =>
@@ -269,10 +277,14 @@ begin
                 addr_cfg_next      <= addr_cfg_reg;
 
             when s_read_w =>
-                if (addr_w_ctrl_reg = 3) then
-                    addr_w_ctrl_next <= 0;
+                if ((en_w_read_reg and en_w_read_tmp) = '1') then
+                    if (addr_w_ctrl_reg = 2) then
+                        addr_w_ctrl_next <= 0;
+                    else
+                        addr_w_ctrl_next <= addr_w_ctrl_reg + 1;
+                    end if;
                 else
-                    addr_w_ctrl_next <= addr_w_ctrl_reg + 1;
+                    addr_w_ctrl_next <= addr_w_ctrl_reg;
                 end if;
 
                 addr_w_next <= addr_w_out;

@@ -31,7 +31,7 @@ package thesis_pkg is
 
     -- **** TYPE DECLARATIONS ****
     constant ACT_BITWIDTH     : natural := 16;
-    constant WEIGHT_BITWIDTH  : natural := 8;
+    constant WEIGHT_BITWIDTH  : natural := 10;
     constant BIAS_BITWIDTH    : natural := 16;
     constant PSUM_BITWIDTH    : natural := natural(ceil(log2(real(RS_max_PKG * RS_max_PKG * 2 ** (WEIGHT_BITWIDTH) * 2 ** (ACT_BITWIDTH)))));                         -- determines bitwidth of the psum considering worst case scenario accumulations
     constant OFMAP_P_BITWIDTH : natural := natural(ceil(log2(real(r_max_PKG * RS_max_PKG * RS_max_PKG * 2 ** (WEIGHT_BITWIDTH) * 2 ** (ACT_BITWIDTH)))));             -- Bitwidth of Adder Tree
@@ -40,7 +40,7 @@ package thesis_pkg is
 
     -- *** Fixed-Point Quantization Scheme: q<i.f> ***
     constant q_w        : natural := WEIGHT_BITWIDTH;
-    constant f_w        : natural := 5;
+    constant f_w        : natural := 4;
     constant i_w        : natural := q_w - f_w;
     constant q_act      : natural := ACT_BITWIDTH;
     constant f_act      : natural := 10;
@@ -60,10 +60,10 @@ package thesis_pkg is
     constant OFMAP_WORDLENGTH : natural := OFMAP_BITWIDTH;
     constant OFMAP_ADDRESSES  : natural := natural(ceil(log2(real(M_max_PKG * EF_max_PKG * EF_max_PKG))));
     constant WB_WORDLENGTH    : natural := 32;
-    constant WB_ADDRESSES     : natural := natural(ceil(log2(real((C_max_PKG * M_max_PKG * RS_max_PKG * RS_max_PKG)/(WB_WORDLENGTH/WEIGHT_BITWIDTH) + (M_max_PKG)/(WB_WORDLENGTH/BIAS_BITWIDTH) + layers_PKG * ((NUM_OF_PARAMS_PKG - 1)/(WB_WORDLENGTH/HYP_BITWIDTH)) + 1)))); -- Depends on CNN, unless changed later if layer-by-layer basis, in which case I'd need space for largest layer.
+    constant WB_ADDRESSES     : natural := natural(ceil(log2(real((C_max_PKG * M_max_PKG * RS_max_PKG * RS_max_PKG)/natural(floor(real(WB_WORDLENGTH)/real(WEIGHT_BITWIDTH))) + (M_max_PKG)/(WB_WORDLENGTH/BIAS_BITWIDTH) + layers_PKG * ((NUM_OF_PARAMS_PKG - 1)/(WB_WORDLENGTH/HYP_BITWIDTH)) + 1)))); -- Depends on CNN, unless changed later if layer-by-layer basis, in which case I'd need space for largest layer.
     constant ACT_WORDLENGTH   : natural := 32;
     constant ACT_ADDRESSES    : natural := natural(ceil(log2(real((M_max_PKG * EF_max_PKG/2 * EF_max_PKG/2)/(ACT_WORDLENGTH/ACT_BITWIDTH))))); -- Output of Max. Pooling (8*4*4)
-    constant ADDR_CFG_PKG     : natural := natural(ceil(log2(real((C_max_PKG * M_max_PKG * RS_max_PKG * RS_max_PKG)/(WB_WORDLENGTH/WEIGHT_BITWIDTH) + (M_max_PKG)/(WB_WORDLENGTH/BIAS_BITWIDTH))))); -- First Address of the reserved space for config. parameters.
+    constant ADDR_CFG_PKG     : natural := natural(ceil(real((C_max_PKG * M_max_PKG * RS_max_PKG * RS_max_PKG)/natural(floor(real(WB_WORDLENGTH)/real(WEIGHT_BITWIDTH))) + (M_max_PKG)/(WB_WORDLENGTH/BIAS_BITWIDTH)))); -- First Address of the reserved space for config. parameters.
 
     type weight_array is array (natural range <>) of std_logic_vector(WEIGHT_BITWIDTH - 1 downto 0);
     type weight_2D_array is array (natural range <>) of weight_array;

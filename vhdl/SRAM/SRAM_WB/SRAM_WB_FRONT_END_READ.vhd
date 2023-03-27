@@ -7,8 +7,7 @@ entity SRAM_WB_FRONT_END_READ is
     port (
         clk            : in std_logic;
         reset          : in std_logic;
-        WB_NL_ready    : in std_logic; -- Reads SRAM exactly on those moments in which this signal is '0', when NL is not idle.
-        WB_NL_finished : in std_logic; -- WB NL has finished. Do not read SRAM anymore.
+        WB_NL_busy     : in std_logic;
         NoC_c          : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
         NoC_pm_bias    : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
         OFM_NL_Write   : in std_logic;
@@ -31,8 +30,6 @@ architecture dataflow of SRAM_WB_FRONT_END_READ is
     signal NoC_pm_BE_tmp      : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
     signal w_out_tmp          : std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
     signal b_out_tmp          : std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
-    signal WB_NL_ready_tmp    : std_logic;
-    signal WB_NL_finished_tmp : std_logic;
     signal NoC_c_tmp          : natural;
     signal wb_BE_tmp          : std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
     signal en_w_read_tmp      : std_logic;
@@ -50,7 +47,7 @@ begin
     
     NoC_c_eqz <= '1' when (NoC_c_tmp = 0) else '0';
 
-    en_w_read_next <= '1' when ((WB_NL_ready nor WB_NL_finished) = '1') else '0';
+    en_w_read_next <= '1' when (WB_NL_busy = '1') else '0';
     en_w_read_reg_proc : process (clk, reset)
     begin
         if rising_edge(clk) then
@@ -72,7 +69,7 @@ begin
     b_out       <= b_out_tmp;
     wb_BE_tmp   <= wb_BE;
     NoC_c_tmp   <= to_integer(unsigned(NoC_c));
-    en_w_read   <= en_w_read_tmp;
+    en_w_read   <= en_w_read_tmp_2;
     en_b_read   <= en_b_read_tmp;
     en_cfg_read <= READ_CFG;
     cfg_out     <= cfg_BE;

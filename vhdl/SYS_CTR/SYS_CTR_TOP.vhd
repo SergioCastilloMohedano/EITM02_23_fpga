@@ -53,8 +53,6 @@ entity SYS_CTR_TOP is
         IFM_NL_ready              : out std_logic;
         IFM_NL_finished           : out std_logic;
         IFM_NL_busy               : out std_logic;
-        WB_NL_ready               : out std_logic;
-        WB_NL_finished            : out std_logic;
         WB_NL_busy                : out std_logic;
         pass_flag                 : out std_logic;
         shift_PISO                : in std_logic;
@@ -410,8 +408,6 @@ begin
     IFM_NL_ready              <= IFM_NL_ready_tmp;
     IFM_NL_finished           <= IFM_NL_finished_tmp;
     IFM_NL_busy               <= IFM_NL_busy_tmp;
-    WB_NL_ready               <= WB_NL_ready_tmp;
-    WB_NL_finished            <= WB_NL_finished_tmp;
     WB_NL_busy                <= WB_NL_busy_tmp;
     pass_flag                 <= pass_flag_tmp;
     OFM_NL_NoC_m_cnt_finished <= OFM_NL_NoC_m_cnt_finished_tmp;

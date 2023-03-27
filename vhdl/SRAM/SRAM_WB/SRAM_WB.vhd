@@ -12,8 +12,7 @@ entity SRAM_WB is
         clk   : in std_logic;
         reset : in std_logic;
         -- Sys. Ctr. Signals
-        WB_NL_ready    : in std_logic;
-        WB_NL_finished : in std_logic;
+        WB_NL_busy     : in std_logic;
         NoC_c          : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
         NoC_pm_bias    : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
         OFM_NL_Write   : in std_logic;
@@ -30,8 +29,7 @@ end SRAM_WB;
 architecture structural of SRAM_WB is
 
     -- SIGNAL DECLARATIONS
-    signal WB_NL_ready_tmp    : std_logic;
-    signal WB_NL_finished_tmp : std_logic;
+    signal WB_NL_busy_tmp     : std_logic;
     signal w_out_tmp          : std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
     signal b_out_tmp          : std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
     signal cfg_out_tmp        : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
@@ -53,8 +51,7 @@ architecture structural of SRAM_WB is
         port (
             clk            : in std_logic;
             reset          : in std_logic;
-            WB_NL_ready    : in std_logic; -- Reads SRAM exactly on those moments in which this signal is '0', when NL is not idle.
-            WB_NL_finished : in std_logic; -- WB NL has finished. Do not read SRAM anymore.
+            WB_NL_busy     : in std_logic;
             NoC_c          : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
             NoC_pm_bias    : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
             OFM_NL_Write   : in std_logic;
@@ -115,8 +112,7 @@ begin
     port map(
         clk            => clk,
         reset          => reset,
-        WB_NL_ready    => WB_NL_ready_tmp,
-        WB_NL_finished => WB_NL_finished_tmp,
+        WB_NL_busy     => WB_NL_busy_tmp,
         NoC_c          => NoC_c,
         NoC_pm_bias    => NoC_pm_bias,
         OFM_NL_Write   => OFM_NL_Write,
@@ -167,8 +163,7 @@ begin
     );
 
     -- PORT ASSIGNATIONS
-    WB_NL_ready_tmp    <= WB_NL_ready;
-    WB_NL_finished_tmp <= WB_NL_finished;
+    WB_NL_busy_tmp     <= WB_NL_busy;
     w_out              <= w_out_tmp;
     b_out              <= b_out_tmp;
     cfg_out            <= cfg_out_tmp;

@@ -40,8 +40,6 @@ architecture structural of TOP is
     signal IFM_NL_ready_tmp    : std_logic;
     signal IFM_NL_finished_tmp : std_logic;
     signal IFM_NL_busy_tmp     : std_logic;
-    signal WB_NL_ready_tmp     : std_logic;
-    signal WB_NL_finished_tmp  : std_logic;
     signal WB_NL_busy_tmp      : std_logic;
     signal pass_flag_tmp       : std_logic;
     signal NoC_c               : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
@@ -121,8 +119,6 @@ architecture structural of TOP is
             IFM_NL_ready              : out std_logic;
             IFM_NL_finished           : out std_logic;
             IFM_NL_busy               : out std_logic;
-            WB_NL_ready               : out std_logic;
-            WB_NL_finished            : out std_logic;
             WB_NL_busy                : out std_logic;
             pass_flag                 : out std_logic;
             shift_PISO                : in std_logic;
@@ -158,8 +154,7 @@ architecture structural of TOP is
         port (
             clk            : in std_logic;
             reset          : in std_logic;
-            WB_NL_ready    : in std_logic;
-            WB_NL_finished : in std_logic;
+            WB_NL_busy     : in std_logic;
             NoC_c          : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
             NoC_pm_bias    : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
             OFM_NL_Write   : in std_logic;
@@ -316,8 +311,6 @@ begin
         IFM_NL_ready              => IFM_NL_ready_tmp,
         IFM_NL_finished           => IFM_NL_finished_tmp,
         IFM_NL_busy               => IFM_NL_busy_tmp,
-        WB_NL_ready               => WB_NL_ready_tmp,
-        WB_NL_finished            => WB_NL_finished_tmp,
         WB_NL_busy                => WB_NL_busy_tmp,
         pass_flag                 => pass_flag_tmp,
         shift_PISO                => shift_PISO,
@@ -353,8 +346,7 @@ begin
     port map(
         clk            => clk,
         reset          => reset,
-        WB_NL_ready    => WB_NL_ready_tmp,
-        WB_NL_finished => WB_NL_finished_tmp,
+        WB_NL_busy     => WB_NL_busy_tmp,
         NoC_c          => NoC_c,
         NoC_pm_bias    => NoC_pm_bias_tmp,
         OFM_NL_Write   => OFM_NL_Write_tmp,
