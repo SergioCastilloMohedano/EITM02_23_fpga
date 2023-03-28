@@ -20,7 +20,13 @@ entity CNN_TOP is
         p_CNN_start    : in std_logic;
         p_CNN_ready    : out std_logic;
         p_CNN_finished : out std_logic;
-        p_mem_ctr      : in std_logic_vector (1 downto 0)
+        -- RISC-V INTERFACE
+        p_mem_ctr      : in std_logic_vector (1 downto 0);
+        p_en_rv        : in std_logic;
+        p_we_rv        : in std_logic;
+        p_addr_rv      : in std_logic_vector (EXT_ADDRESSES - 1 downto 0);
+        p_din_rv       : in std_logic_vector (EXT_WORDLENGTH - 1 downto 0);
+        p_dout_rv      : out std_logic_vector (EXT_WORDLENGTH - 1 downto 0)
     );
 end CNN_TOP;
 
@@ -101,9 +107,9 @@ architecture structural of CNN_TOP is
     -- RISC-V Mem Controller
     signal en_rv_tmp       : std_logic;
     signal we_rv_tmp       : std_logic_vector(0 downto 0);
-    signal addr_rv_tmp     : std_logic_vector(maximum(WB_ADDRESSES, ACT_ADDRESSES) - 1 downto 0);
-    signal din_rv_tmp      : std_logic_vector(MEM_WORDLENGTH - 1 downto 0);
-    signal dout_rv_tmp     : std_logic_vector(MEM_WORDLENGTH - 1 downto 0);
+    signal addr_rv_tmp     : std_logic_vector(EXT_ADDRESSES - 1 downto 0);
+    signal din_rv_tmp      : std_logic_vector(EXT_WORDLENGTH - 1 downto 0);
+    signal dout_rv_tmp     : std_logic_vector(EXT_WORDLENGTH - 1 downto 0);
     signal mem_ctr_wb_tmp  : std_logic;
     signal ena_wb_tmp      : std_logic;
     signal wea_wb_tmp      : std_logic_vector(0 downto 0);
@@ -583,5 +589,11 @@ begin
     -- PORT Assignations
     p_CNN_ready    <= CNN_ready_tmp;
     p_CNN_finished <= CNN_finished_tmp;
+    en_rv_tmp      <= p_en_rv;
+    we_rv_tmp(0)   <= p_we_rv;
+    addr_rv_tmp    <= p_addr_rv;
+    din_rv_tmp     <= p_din_rv;
+    p_dout_rv      <= dout_rv_tmp;
+
 
 end architecture;
