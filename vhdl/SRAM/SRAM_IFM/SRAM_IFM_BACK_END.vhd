@@ -20,8 +20,8 @@ entity SRAM_IFM_BACK_END is
         -- SRAM Wrapper Ports (ASIC)
         A     : out std_logic_vector(ACT_ADDRESSES - 1 downto 0);
         CSN   : out std_logic;
-        D     : out std_logic_vector (ACT_WORDLENGTH - 1 downto 0);
-        Q     : in std_logic_vector (ACT_WORDLENGTH - 1 downto 0);
+        D     : out std_logic_vector (MEM_WORDLENGTH - 1 downto 0);
+        Q     : in std_logic_vector (MEM_WORDLENGTH - 1 downto 0);
         WEN   : out std_logic
     );
 end SRAM_IFM_BACK_END;
@@ -65,7 +65,7 @@ architecture behavioral of SRAM_IFM_BACK_END is
     signal ifm_FE_r_tmp          : std_logic_vector (ACT_BITWIDTH - 1 downto 0);
     signal CSN_r, CSN_w, CSN_tmp : std_logic;
     signal A_tmp                 : unsigned (ACT_ADDRESSES - 1 downto 0);
-    signal Q_tmp                 : std_logic_vector (ACT_WORDLENGTH - 1 downto 0);
+    signal Q_tmp                 : std_logic_vector (MEM_WORDLENGTH - 1 downto 0);
 
     -- SRAM_IFM_BACK_END Intermediate Signals
     -- ..

@@ -21,7 +21,14 @@ entity SRAM_IFM is
         en_w_IFM    : in std_logic;
         pooling_ack : in std_logic;
         pooling_IFM : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
-        rn_IFM      : in std_logic_vector (ACT_BITWIDTH - 1 downto 0)
+        rn_IFM      : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
+        -- RISC-V Interface
+        mem_ctr_ifm  : out std_logic;
+        ena_ifm_rv   : out std_logic;
+        wea_ifm_rv   : out std_logic_vector(0 downto 0);
+        addra_ifm_rv : out std_logic_vector(ACT_ADDRESSES - 1 downto 0);
+        dina_ifm_rv  : out std_logic_vector(MEM_WORDLENGTH - 1 downto 0);
+        douta_ifm_rv : in std_logic_vector(MEM_WORDLENGTH - 1 downto 0)
     );
 end SRAM_IFM;
 
@@ -41,9 +48,17 @@ architecture structural of SRAM_IFM is
     signal WE_tmp              : std_logic;
     signal A_tmp               : std_logic_vector (ACT_ADDRESSES - 1 downto 0);
     signal CSN_tmp             : std_logic;
-    signal D_tmp               : std_logic_vector (ACT_WORDLENGTH - 1 downto 0);
-    signal Q_tmp               : std_logic_vector (ACT_WORDLENGTH - 1 downto 0);
+    signal D_tmp               : std_logic_vector (MEM_WORDLENGTH - 1 downto 0);
+    signal Q_tmp               : std_logic_vector (MEM_WORDLENGTH - 1 downto 0);
     signal WEN_tmp             : std_logic_vector (0 downto 0);
+
+    -- RISC-V Interface
+    signal WEN_tmp_rv      : std_logic;
+    signal CSN_tmp_rv      : std_logic;
+    signal A_tmp_rv        : std_logic_vector(ACT_ADDRESSES - 1 downto 0);
+    signal D_tmp_rv        : std_logic_vector(MEM_WORDLENGTH - 1 downto 0);
+    signal douta_ifm_rv_tmp : std_logic_vector(MEM_WORDLENGTH - 1 downto 0);
+    signal Q_tmp_rv        : std_logic_vector(MEM_WORDLENGTH - 1 downto 0);
 
     -- COMPONENT DECLARATIONS
     component SRAM_IFM_FRONT_END_READ is
@@ -91,8 +106,8 @@ architecture structural of SRAM_IFM is
             -- SRAM Wrapper Ports
             A   : out std_logic_vector(ACT_ADDRESSES - 1 downto 0);
             CSN : out std_logic;
-            D   : out std_logic_vector (ACT_WORDLENGTH - 1 downto 0);
-            Q   : in std_logic_vector (ACT_WORDLENGTH - 1 downto 0);
+            D   : out std_logic_vector (MEM_WORDLENGTH - 1 downto 0);
+            Q   : in std_logic_vector (MEM_WORDLENGTH - 1 downto 0);
             WEN : out std_logic
         );
     end component;
@@ -104,8 +119,8 @@ architecture structural of SRAM_IFM is
             ena       : in std_logic;
             wea       : in std_logic_vector(0 downto 0);
             addra     : in std_logic_vector(ACT_ADDRESSES - 1 downto 0);
-            dina      : in std_logic_vector(ACT_WORDLENGTH - 1 downto 0);
-            douta     : out std_logic_vector(ACT_WORDLENGTH - 1 downto 0);
+            dina      : in std_logic_vector(MEM_WORDLENGTH - 1 downto 0);
+            douta     : out std_logic_vector(MEM_WORDLENGTH - 1 downto 0);
             rsta_busy : out std_logic
         );
     end component;
@@ -164,13 +179,36 @@ begin
     port map(
         clka      => clk,
         rsta      => reset,
-        ena       => not(CSN_tmp),
-        wea       => not(WEN_tmp),
-        addra     => A_tmp,
-        dina      => D_tmp,
-        douta     => Q_tmp,
+        ena       => not(CSN_tmp_rv),
+        wea(0)    => not(WEN_tmp_rv),
+        addra     => A_tmp_rv,
+        dina      => D_tmp_rv,
+        douta     => Q_tmp_rv,
         rsta_busy => open
     );
+
+    -- ***************************
+    -- RISC-V Controller Interface
+    -- ***************************
+    p_riscv : process (mem_ctr_ifm)
+    begin
+        if (mem_ctr_ifm = '1') then
+            WEN_tmp_rv       <= not(wea_ifm_rv(0));
+            CSN_tmp_rv       <= not(ena_ifm_rv);
+            A_tmp_rv         <= addra_ifm_rv;
+            D_tmp_rv         <= dina_ifm_rv;
+            douta_ifm_rv_tmp <= Q_tmp_rv;
+            Q_tmp            <= (others => '0');
+        else
+            WEN_tmp_rv       <= WEN_tmp(0);
+            CSN_tmp_rv       <= CSN_tmp;
+            A_tmp_rv         <= A_tmp;
+            D_tmp_rv         <= D_tmp;
+            douta_ifm_rv_tmp <= (others => '0');
+            Q_tmp            <= Q_tmp_rv;
+        end if;
+    end process;
+    -- ***************************
 
     -- PORT ASSIGNATIONS
     h_p_tmp             <= h_p;

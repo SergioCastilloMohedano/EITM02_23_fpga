@@ -59,11 +59,10 @@ package thesis_pkg is
     -- *** Memories Interfaces ***
     constant OFMAP_WORDLENGTH : natural := OFMAP_BITWIDTH;
     constant OFMAP_ADDRESSES  : natural := natural(ceil(log2(real(M_max_PKG * EF_max_PKG * EF_max_PKG))));
-    constant WB_WORDLENGTH    : natural := 32;
-    constant WB_ADDRESSES     : natural := natural(ceil(log2(real((C_max_PKG * M_max_PKG * RS_max_PKG * RS_max_PKG)/natural(floor(real(WB_WORDLENGTH)/real(WEIGHT_BITWIDTH))) + (M_max_PKG)/(WB_WORDLENGTH/BIAS_BITWIDTH) + layers_PKG * ((NUM_OF_PARAMS_PKG - 1)/(WB_WORDLENGTH/HYP_BITWIDTH)) + 1)))); -- Depends on CNN, unless changed later if layer-by-layer basis, in which case I'd need space for largest layer.
-    constant ACT_WORDLENGTH   : natural := 32;
-    constant ACT_ADDRESSES    : natural := natural(ceil(log2(real((M_max_PKG * EF_max_PKG/2 * EF_max_PKG/2)/(ACT_WORDLENGTH/ACT_BITWIDTH))))); -- Output of Max. Pooling (8*4*4)
-    constant ADDR_CFG_PKG     : natural := natural(ceil(real((C_max_PKG * M_max_PKG * RS_max_PKG * RS_max_PKG)/natural(floor(real(WB_WORDLENGTH)/real(WEIGHT_BITWIDTH))) + (M_max_PKG)/(WB_WORDLENGTH/BIAS_BITWIDTH)))); -- First Address of the reserved space for config. parameters.
+    constant MEM_WORDLENGTH   : natural := 32;
+    constant WB_ADDRESSES     : natural := natural(ceil(log2(real((C_max_PKG * M_max_PKG * RS_max_PKG * RS_max_PKG)/natural(floor(real(MEM_WORDLENGTH)/real(WEIGHT_BITWIDTH))) + (M_max_PKG)/(MEM_WORDLENGTH/BIAS_BITWIDTH) + layers_PKG * ((NUM_OF_PARAMS_PKG - 1)/(MEM_WORDLENGTH/HYP_BITWIDTH)) + 1)))); -- Depends on CNN, unless changed later if layer-by-layer basis, in which case I'd need space for largest layer.
+    constant ACT_ADDRESSES    : natural := natural(ceil(log2(real((M_max_PKG * (EF_max_PKG/2) * (EF_max_PKG/2))/(MEM_WORDLENGTH/ACT_BITWIDTH))))); -- Output of Max. Pooling (8*4*4)
+    constant ADDR_CFG_PKG     : natural := natural(ceil(real((C_max_PKG * M_max_PKG * RS_max_PKG * RS_max_PKG)/natural(floor(real(MEM_WORDLENGTH)/real(WEIGHT_BITWIDTH))) + (M_max_PKG)/(MEM_WORDLENGTH/BIAS_BITWIDTH)))); -- First Address of the reserved space for config. parameters.
 
     type weight_array is array (natural range <>) of std_logic_vector(WEIGHT_BITWIDTH - 1 downto 0);
     type weight_2D_array is array (natural range <>) of weight_array;

@@ -20,9 +20,16 @@ entity SRAM_WB is
         -- Front-End Read Interface
         w_out   : out std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
         b_out   : out std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
-        cfg_out : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0)
+        cfg_out : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
         -- Front-End Write Interface
         -- ..
+        -- RISC-V Interface
+        mem_ctr_wb  : in std_logic;
+        ena_wb_rv   : in std_logic;
+        wea_wb_rv   : in std_logic_vector(0 downto 0);
+        addra_wb_rv : in std_logic_vector(WB_ADDRESSES - 1 downto 0);
+        dina_wb_rv  : in std_logic_vector(MEM_WORDLENGTH - 1 downto 0);
+        douta_wb_rv : out std_logic_vector(MEM_WORDLENGTH - 1 downto 0)
     );
 end SRAM_WB;
 
@@ -42,9 +49,17 @@ architecture structural of SRAM_WB is
 
     signal A_tmp   : std_logic_vector(WB_ADDRESSES - 1 downto 0);
     signal CSN_tmp : std_logic;
-    signal D_tmp   : std_logic_vector (WB_WORDLENGTH - 1 downto 0);
-    signal Q_tmp   : std_logic_vector (WB_WORDLENGTH - 1 downto 0);
+    signal D_tmp   : std_logic_vector (MEM_WORDLENGTH - 1 downto 0);
+    signal Q_tmp   : std_logic_vector (MEM_WORDLENGTH - 1 downto 0);
     signal WEN_tmp : std_logic;
+
+    -- RISC-V Interface
+    signal WEN_tmp_rv      : std_logic;
+    signal CSN_tmp_rv      : std_logic;
+    signal A_tmp_rv        : std_logic_vector(WB_ADDRESSES - 1 downto 0);
+    signal D_tmp_rv        : std_logic_vector(MEM_WORDLENGTH - 1 downto 0);
+    signal douta_wb_rv_tmp : std_logic_vector(MEM_WORDLENGTH - 1 downto 0);
+    signal Q_tmp_rv        : std_logic_vector(MEM_WORDLENGTH - 1 downto 0);
 
     -- COMPONENT DECLARATIONS
     component SRAM_WB_FRONT_END_READ is
@@ -87,8 +102,8 @@ architecture structural of SRAM_WB is
             -- SRAM Block Wrapper Ports (ASIC)
             A   : out std_logic_vector(WB_ADDRESSES - 1 downto 0);
             CSN : out std_logic;
-            D   : out std_logic_vector (WB_WORDLENGTH - 1 downto 0);
-            Q   : in std_logic_vector (WB_WORDLENGTH - 1 downto 0);
+            D   : out std_logic_vector (MEM_WORDLENGTH - 1 downto 0);
+            Q   : in std_logic_vector (MEM_WORDLENGTH - 1 downto 0);
             WEN : out std_logic
         );
     end component;
@@ -99,8 +114,8 @@ architecture structural of SRAM_WB is
             reset : in std_logic;
             A     : in std_logic_vector(WB_ADDRESSES - 1 downto 0);
             CSN   : in std_logic;
-            D     : in std_logic_vector (WB_WORDLENGTH - 1 downto 0);
-            Q     : out std_logic_vector (WB_WORDLENGTH - 1 downto 0);
+            D     : in std_logic_vector (MEM_WORDLENGTH - 1 downto 0);
+            Q     : out std_logic_vector (MEM_WORDLENGTH - 1 downto 0);
             WEN   : in std_logic
         );
     end component;
@@ -145,9 +160,9 @@ begin
         NoC_pm_FE   => NoC_pm_tmp,
         A           => A_tmp,
         CSN         => CSN_tmp,
-        D           => open, --D_tmp,
+        D           => open,
         Q           => Q_tmp,
-        WEN         => open --WEN_tmp,
+        WEN         => open
     );
 
     -- SRAM_WB_WRAPPER_BLOCK
@@ -156,11 +171,34 @@ begin
         clk   => clk,
         reset => reset,
         A     => A_tmp,
-        CSN   => CSN_tmp,
-        D     => (others => '0'), --D_tmp,
-        Q     => Q_tmp,
-        WEN   => '1' --WEN_tmp,
+        CSN   => CSN_tmp_rv,
+        D     => D_tmp,
+        Q     => Q_tmp_rv,
+        WEN   => WEN_tmp_rv
     );
+
+    -- ***************************
+    -- RISC-V Controller Interface
+    -- ***************************
+    p_riscv : process (mem_ctr_wb)
+    begin
+        if (mem_ctr_wb = '1') then
+            WEN_tmp_rv      <= not(wea_wb_rv(0));
+            CSN_tmp_rv      <= not(ena_wb_rv);
+            A_tmp_rv        <= addra_wb_rv;
+            D_tmp_rv        <= dina_wb_rv;
+            douta_wb_rv_tmp <= Q_tmp_rv;
+            Q_tmp           <= (others => '0');
+        else
+            WEN_tmp_rv      <= '1';
+            CSN_tmp_rv      <= CSN_tmp;
+            A_tmp_rv        <= A_tmp;
+            D_tmp_rv        <= (others => '0');
+            douta_wb_rv_tmp <= (others => '0');
+            Q_tmp           <= Q_tmp_rv;
+        end if;
+    end process;
+    -- ***************************
 
     -- PORT ASSIGNATIONS
     WB_NL_busy_tmp     <= WB_NL_busy;

@@ -21,8 +21,8 @@ entity SRAM_WB_BACK_END is
         -- SRAM Block Wrapper Ports (ASIC)
         A   : out std_logic_vector(WB_ADDRESSES - 1 downto 0);
         CSN : out std_logic;
-        D   : out std_logic_vector ((WB_WORDLENGTH - 1) downto 0);
-        Q   : in std_logic_vector ((WB_WORDLENGTH - 1) downto 0);
+        D   : out std_logic_vector ((MEM_WORDLENGTH - 1) downto 0);
+        Q   : in std_logic_vector ((MEM_WORDLENGTH - 1) downto 0);
         WEN : out std_logic
     );
 end SRAM_WB_BACK_END;
@@ -73,17 +73,17 @@ architecture behavioral of SRAM_WB_BACK_END is
     ---- Data Outputs
     signal A_tmp      : std_logic_vector(WB_ADDRESSES - 1 downto 0);
     signal CSN_tmp    : std_logic;
-    signal D_tmp      : std_logic_vector ((WB_WORDLENGTH - 1) downto 0);
+    signal D_tmp      : std_logic_vector ((MEM_WORDLENGTH - 1) downto 0);
     signal WEN_tmp    : std_logic;
     signal wb_FE_tmp  : std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
     signal cfg_FE_tmp : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
 
     -- SRAM_WB_BACK_END Intermediate Signals
     signal weight_tmp : std_logic_vector (BIAS_BITWIDTH - 1 downto 0); -- MSBs zeroes disregarded in front-end read interface
-    signal zeroes     : std_logic_vector ((WB_WORDLENGTH - 1) - BIAS_BITWIDTH - WEIGHT_BITWIDTH downto 0);
-    signal Q_w_tmp    : std_logic_vector ((WB_WORDLENGTH - 1) downto 0);
-    signal Q_b_tmp    : std_logic_vector ((WB_WORDLENGTH - 1) downto 0);
-    signal Q_cfg_tmp  : std_logic_vector ((WB_WORDLENGTH - 1) downto 0);
+    signal zeroes     : std_logic_vector ((MEM_WORDLENGTH - 1) - BIAS_BITWIDTH - WEIGHT_BITWIDTH downto 0);
+    signal Q_w_tmp    : std_logic_vector ((MEM_WORDLENGTH - 1) downto 0);
+    signal Q_b_tmp    : std_logic_vector ((MEM_WORDLENGTH - 1) downto 0);
+    signal Q_cfg_tmp  : std_logic_vector ((MEM_WORDLENGTH - 1) downto 0);
     signal bias_tmp   : std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
 
 begin

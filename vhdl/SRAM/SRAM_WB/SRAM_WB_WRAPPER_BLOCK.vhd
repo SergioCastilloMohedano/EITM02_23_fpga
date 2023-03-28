@@ -9,8 +9,8 @@ entity SRAM_WB_WRAPPER_BLOCK is
         reset : in std_logic;
         A     : in std_logic_vector(WB_ADDRESSES - 1 downto 0);
         CSN   : in std_logic;
-        D     : in std_logic_vector (WB_WORDLENGTH - 1 downto 0);
-        Q     : out std_logic_vector (WB_WORDLENGTH - 1 downto 0);
+        D     : in std_logic_vector (MEM_WORDLENGTH - 1 downto 0);
+        Q     : out std_logic_vector (MEM_WORDLENGTH - 1 downto 0);
         WEN   : in std_logic
     );
 end SRAM_WB_WRAPPER_BLOCK;
@@ -25,8 +25,8 @@ architecture structural of SRAM_WB_WRAPPER_BLOCK is
             ena       : in std_logic;
             wea       : in std_logic_vector(0 downto 0);
             addra     : in std_logic_vector(WB_ADDRESSES - 1 downto 0);
-            dina      : in std_logic_vector(WB_WORDLENGTH - 1 downto 0);
-            douta     : out std_logic_vector(WB_WORDLENGTH - 1 downto 0);
+            dina      : in std_logic_vector(MEM_WORDLENGTH - 1 downto 0);
+            douta     : out std_logic_vector(MEM_WORDLENGTH - 1 downto 0);
             rsta_busy : out std_logic
         );
     end component;
