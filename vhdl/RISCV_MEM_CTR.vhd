@@ -9,9 +9,9 @@ entity RISCV_MEM_CTR is
         mem_ctr : in std_logic_vector (1 downto 0);
         en_rv   : in std_logic;
         we_rv   : in std_logic_vector(0 downto 0);
-        addr_rv : in std_logic_vector(maximum(WB_ADDRESSES, ACT_ADDRESSES) - 1 downto 0);
-        din_rv  : in std_logic_vector(MEM_WORDLENGTH - 1 downto 0);
-        dout_rv : out std_logic_vector(MEM_WORDLENGTH - 1 downto 0);
+        addr_rv : in std_logic_vector(EXT_ADDRESSES - 1 downto 0);
+        din_rv  : in std_logic_vector(EXT_WORDLENGTH - 1 downto 0);
+        dout_rv : out std_logic_vector(EXT_WORDLENGTH - 1 downto 0);
         -- To/From WB_BRAM
         mem_ctr_wb : out std_logic;
         ena_wb     : out std_logic;
