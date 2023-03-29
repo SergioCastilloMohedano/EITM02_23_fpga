@@ -214,12 +214,12 @@ architecture structural of CNN_TOP is
             pooling_IFM     : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
             rn_IFM          : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
             -- RISC-V Interface
-            mem_ctr_ifm    : out std_logic;
-            ena_ifm_rv     : out std_logic;
-            wea_ifm_rv     : out std_logic_vector(0 downto 0);
-            addra_ifm_rv   : out std_logic_vector(ACT_ADDRESSES - 1 downto 0);
-            dina_ifm_rv    : out std_logic_vector(MEM_WORDLENGTH - 1 downto 0);
-            douta_ifm_rv   : in std_logic_vector(MEM_WORDLENGTH - 1 downto 0)
+            mem_ctr_ifm    : in std_logic;
+            ena_ifm_rv     : in std_logic;
+            wea_ifm_rv     : in std_logic_vector(0 downto 0);
+            addra_ifm_rv   : in std_logic_vector(ACT_ADDRESSES - 1 downto 0);
+            dina_ifm_rv    : in std_logic_vector(MEM_WORDLENGTH - 1 downto 0);
+            douta_ifm_rv   : out std_logic_vector(MEM_WORDLENGTH - 1 downto 0)
         );
     end component;
 

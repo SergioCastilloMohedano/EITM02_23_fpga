@@ -170,9 +170,9 @@ begin
     port map(
         clk   => clk,
         reset => reset,
-        A     => A_tmp,
+        A     => A_tmp_rv,
         CSN   => CSN_tmp_rv,
-        D     => D_tmp,
+        D     => D_tmp_rv,
         Q     => Q_tmp_rv,
         WEN   => WEN_tmp_rv
     );
@@ -180,7 +180,7 @@ begin
     -- ***************************
     -- RISC-V Controller Interface
     -- ***************************
-    p_riscv : process (mem_ctr_wb)
+    p_riscv : process (mem_ctr_wb, wea_wb_rv, ena_wb_rv,addra_wb_rv, dina_wb_rv, Q_tmp_rv, CSN_tmp, A_tmp)
     begin
         if (mem_ctr_wb = '1') then
             WEN_tmp_rv      <= not(wea_wb_rv(0));

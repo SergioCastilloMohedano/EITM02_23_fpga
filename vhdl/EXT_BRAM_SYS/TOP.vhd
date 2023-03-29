@@ -5,22 +5,24 @@ use work.thesis_pkg.all;
 
 entity TOP_sys is
     port (
-        p_clk_sys : in std_logic;
-        p_reset_sys : in std_logic;
-        p_CNN_start_sys : in std_logic;
-        p_CNN_ready_sys : out std_logic;
+        p_clk_sys          : in std_logic;
+        p_reset_sys        : in std_logic;
+        p_CNN_start_sys    : in std_logic;
+        p_CNN_ready_sys    : out std_logic;
         p_CNN_finished_sys : out std_logic;
-        p_trigger_sys : in std_logic        
+        p_trigger_sys      : in std_logic
     );
 end TOP_sys;
 
 architecture structural of TOP_sys is
 
-    signal mem_ctr_tmp     : std_logic_vector (1 downto 0);
-    signal ena_tmp   : std_logic;
-    signal wea_tmp   : std_logic;
-    signal addra_tmp : std_logic_vector (EXT_ADDRESSES - 1 downto 0);
-    signal data_tmp  : std_logic_vector (EXT_WORDLENGTH - 1 downto 0);
+    signal mem_ctr_tmp  : std_logic_vector (1 downto 0);
+    signal en_ext_tmp   : std_logic;
+    signal en_cnn_tmp   : std_logic;
+    signal we_ext_tmp   : std_logic;
+    signal we_cnn_tmp   : std_logic;
+    signal addra_tmp    : std_logic_vector (EXT_ADDRESSES - 1 downto 0);
+    signal data_tmp     : std_logic_vector (EXT_WORDLENGTH - 1 downto 0);
     signal addr_cnn_tmp : std_logic_vector (EXT_ADDRESSES - 1 downto 0);
 
     -- COMPONENT DECLARATIONS
@@ -48,8 +50,10 @@ architecture structural of TOP_sys is
             clk      : in std_logic;
             reset    : in std_logic;
             trigger  : in std_logic;
-            en       : out std_logic;
-            we       : out std_logic;
+            en_ext   : out std_logic;
+            en_cnn   : out std_logic;
+            we_ext   : out std_logic;
+            we_cnn   : out std_logic;
             addr_ext : out std_logic_vector (EXT_ADDRESSES - 1 downto 0);
             addr_cnn : out std_logic_vector (EXT_ADDRESSES - 1 downto 0);
             mem_ctr  : out std_logic_vector (1 downto 0)
@@ -81,8 +85,8 @@ begin
         p_CNN_ready    => p_CNN_ready_sys,
         p_CNN_finished => p_CNN_finished_sys,
         p_mem_ctr      => mem_ctr_tmp,
-        p_en_rv        => ena_tmp,
-        p_we_rv        => wea_tmp,
+        p_en_rv        => en_cnn_tmp,
+        p_we_rv        => we_cnn_tmp,
         p_addr_rv      => addr_cnn_tmp,
         p_din_rv       => data_tmp,
         p_dout_rv      => open
@@ -93,22 +97,24 @@ begin
     port map(
         clka      => p_clk_sys,
         rsta      => p_reset_sys,
-        ena       => ena_tmp,
-        wea(0)    => wea_tmp,
+        ena       => en_ext_tmp,
+        wea(0)    => we_ext_tmp,
         addra     => addra_tmp,
-        dina      => (others => '0'),
+        dina => (others => '0'),
         douta     => data_tmp,
         rsta_busy => open
     );
 
     -- EXTERNAL BRAM CONTROLLER
     EXT_BRAM_CTR_inst : EXT_BRAM_CTR
-    port map (
+    port map(
         clk      => p_clk_sys,
         reset    => p_reset_sys,
         trigger  => p_trigger_sys,
-        en       => ena_tmp,
-        we       => wea_tmp,
+        en_ext   => en_ext_tmp,
+        en_cnn   => en_cnn_tmp,
+        we_ext   => we_ext_tmp,
+        we_cnn   => we_cnn_tmp,
         addr_ext => addra_tmp,
         addr_cnn => addr_cnn_tmp,
         mem_ctr  => mem_ctr_tmp

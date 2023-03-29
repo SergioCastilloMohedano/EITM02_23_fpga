@@ -31,12 +31,7 @@ end RISCV_MEM_CTR;
 
 architecture structural of RISCV_MEM_CTR is
 
-    signal mem_ctr_ifm_tmp : std_logic;
-    signal mem_ctr_wb_tmp  : std_logic;
 begin
-
-    mem_ctr_wb_tmp  <= mem_ctr(0);
-    mem_ctr_ifm_tmp <= mem_ctr(1);
 
     -- dout
     with mem_ctr select dout_rv <=
@@ -45,68 +40,68 @@ begin
         (others => '0') when others;
 
     -- ena
-    with mem_ctr_wb_tmp select ena_wb <=
-        en_rv when '1',
+    with mem_ctr select ena_wb <=
+        en_rv when "01",
         '0' when others;
 
-    with mem_ctr_ifm_tmp select ena_ifm <=
-        en_rv when '1',
+    with mem_ctr select ena_ifm <=
+        en_rv when "10",
         '0' when others;
 
     -- wea
-    with mem_ctr_wb_tmp select wea_wb <=
-        we_rv when '1',
+    with mem_ctr select wea_wb <=
+        we_rv when "01",
         (others => '0') when others;
 
-    with mem_ctr_ifm_tmp select wea_ifm <=
-        we_rv when '1',
+    with mem_ctr select wea_ifm <=
+        we_rv when "10",
         (others => '0') when others;
 
     -- addr
     -- WB_ADDRESSES > ACT_ADDRESSES
     gen_addr_1 : if (WB_ADDRESSES > ACT_ADDRESSES) generate
-        with mem_ctr_wb_tmp select addra_wb <=
-        addr_rv when '1',
+        with mem_ctr select addra_wb <=
+        addr_rv when "01",
         (others => '0') when others;
 
-        with mem_ctr_ifm_tmp select addra_ifm <=
-            addr_rv (ACT_ADDRESSES - 1 downto 0) when '1',
+        with mem_ctr select addra_ifm <=
+            addr_rv (ACT_ADDRESSES - 1 downto 0) when "10",
             (others => '0') when others;
     end generate;
 
     -- WB_ADDRESSES < ACT_ADDRESSES
     gen_addr_2 : if (WB_ADDRESSES < ACT_ADDRESSES) generate
-        with mem_ctr_wb_tmp select addra_wb <=
-            addr_rv (WB_ADDRESSES - 1 downto 0) when '1',
+        with mem_ctr select addra_wb <=
+            addr_rv (WB_ADDRESSES - 1 downto 0) when "01",
             (others => '0') when others;
 
-        with mem_ctr_ifm_tmp select addra_ifm <=
-            addr_rv when '1',
+        with mem_ctr select addra_ifm <=
+            addr_rv when "10",
            (others => '0') when others;
     end generate;
 
     -- WB_ADDRESSES = ACT_ADDRESSES
     gen_addr_3 : if (WB_ADDRESSES = ACT_ADDRESSES) generate
-        with mem_ctr_wb_tmp select addra_wb <=
-            addr_rv when '1',
+        with mem_ctr select addra_wb <=
+            addr_rv when "01",
             (others => '0') when others;
 
-        with mem_ctr_ifm_tmp select addra_ifm <=
-            addr_rv when '1',
+        with mem_ctr select addra_ifm <=
+            addr_rv when "10",
             (others => '0') when others;
     end generate;
     
     -- din
-    with mem_ctr_wb_tmp select dina_wb <=
-        din_rv when '1',
+    with mem_ctr select dina_wb <=
+        din_rv when "01",
         (others => '0') when others;
 
-    with mem_ctr_ifm_tmp select dina_ifm <=
-        din_rv when '1',
+    with mem_ctr select dina_ifm <=
+        din_rv when "10",
         (others => '0') when others;
 
     -- mem_ctr
-    mem_ctr_wb  <= mem_ctr_wb_tmp;
-    mem_ctr_ifm <= mem_ctr_ifm_tmp;
+    mem_ctr_wb  <= mem_ctr(0);
+    mem_ctr_ifm <= mem_ctr(1);
         
 end architecture;

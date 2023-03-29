@@ -23,12 +23,12 @@ entity SRAM_IFM is
         pooling_IFM : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
         rn_IFM      : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
         -- RISC-V Interface
-        mem_ctr_ifm  : out std_logic;
-        ena_ifm_rv   : out std_logic;
-        wea_ifm_rv   : out std_logic_vector(0 downto 0);
-        addra_ifm_rv : out std_logic_vector(ACT_ADDRESSES - 1 downto 0);
-        dina_ifm_rv  : out std_logic_vector(MEM_WORDLENGTH - 1 downto 0);
-        douta_ifm_rv : in std_logic_vector(MEM_WORDLENGTH - 1 downto 0)
+        mem_ctr_ifm  : in std_logic;
+        ena_ifm_rv   : in std_logic;
+        wea_ifm_rv   : in std_logic_vector(0 downto 0);
+        addra_ifm_rv : in std_logic_vector(ACT_ADDRESSES - 1 downto 0);
+        dina_ifm_rv  : in std_logic_vector(MEM_WORDLENGTH - 1 downto 0);
+        douta_ifm_rv : out std_logic_vector(MEM_WORDLENGTH - 1 downto 0)
     );
 end SRAM_IFM;
 
@@ -190,7 +190,7 @@ begin
     -- ***************************
     -- RISC-V Controller Interface
     -- ***************************
-    p_riscv : process (mem_ctr_ifm)
+    p_riscv : process (mem_ctr_ifm, wea_ifm_rv, ena_ifm_rv, addra_ifm_rv, dina_ifm_rv, Q_tmp_rv, WEN_tmp, CSN_tmp, A_tmp, D_tmp)
     begin
         if (mem_ctr_ifm = '1') then
             WEN_tmp_rv       <= not(wea_ifm_rv(0));
