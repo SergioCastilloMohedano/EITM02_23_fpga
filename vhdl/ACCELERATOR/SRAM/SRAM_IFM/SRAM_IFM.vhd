@@ -217,4 +217,6 @@ begin
     IFM_NL_ready_tmp    <= IFM_NL_ready;
     IFM_NL_finished_tmp <= IFM_NL_finished;
     ifm_out             <= ifm_out_tmp;
+    douta_ifm_rv        <= douta_ifm_rv_tmp;
+
 end architecture;

@@ -224,6 +224,7 @@ begin
     --    Q_w_tmp((WEIGHT_BITWIDTH * 2 - 1) downto (WEIGHT_BITWIDTH)) & zeroes when 2,
     --    Q_w_tmp((WEIGHT_BITWIDTH - 1) downto 0) & zeroes when 3,
     --    (others => '0') when others;
+
     with addr_w_ctrl_reg select weight_tmp <=
         Q_w_tmp((WEIGHT_BITWIDTH * 3 - 1) downto (WEIGHT_BITWIDTH * 2)) & zeroes when 0,
         Q_w_tmp((WEIGHT_BITWIDTH * 2 - 1) downto (WEIGHT_BITWIDTH * 1)) & zeroes when 1,

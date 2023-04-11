@@ -205,5 +205,6 @@ begin
     w_out              <= w_out_tmp;
     b_out              <= b_out_tmp;
     cfg_out            <= cfg_out_tmp;
+    douta_wb_rv        <= douta_wb_rv_tmp;
 
 end architecture;

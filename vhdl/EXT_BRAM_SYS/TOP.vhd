@@ -24,6 +24,11 @@ architecture structural of TOP_sys is
     signal addra_tmp    : std_logic_vector (EXT_ADDRESSES - 1 downto 0);
     signal data_tmp     : std_logic_vector (EXT_WORDLENGTH - 1 downto 0);
     signal addr_cnn_tmp : std_logic_vector (EXT_ADDRESSES - 1 downto 0);
+    
+    signal p_CNN_finished_sys_tmp : std_logic;
+    signal en_gold_tmp            : std_logic;
+    signal addr_gold_tmp          : std_logic_vector (ACT_ADDRESSES - 1 downto 0);
+    signal dout_gold_tmp          : std_logic_vector(MEM_WORDLENGTH - 1 downto 0);
 
     -- COMPONENT DECLARATIONS
     -- ACCELERATOR
@@ -56,12 +61,29 @@ architecture structural of TOP_sys is
             we_cnn   : out std_logic;
             addr_ext : out std_logic_vector (EXT_ADDRESSES - 1 downto 0);
             addr_cnn : out std_logic_vector (EXT_ADDRESSES - 1 downto 0);
-            mem_ctr  : out std_logic_vector (1 downto 0)
+            mem_ctr  : out std_logic_vector (1 downto 0);
+            finish_cnn : in std_logic;
+            en_gold    : out std_logic;
+            addr_gold  : out std_logic_vector (ACT_ADDRESSES - 1 downto 0)
         );
     end component;
 
     -- EXTERNAL BRAM
     component blk_mem_gen_0 is
+        port (
+            clka      : in std_logic;
+            rsta      : in std_logic;
+            ena       : in std_logic;
+            wea       : in std_logic_vector(0 downto 0);
+            addra     : in std_logic_vector(5 downto 0);
+            dina      : in std_logic_vector(31 downto 0);
+            douta     : out std_logic_vector(31 downto 0);
+            rsta_busy : out std_logic
+        );
+    end component;
+
+    -- EXTERNAL GOLDEN BRAM
+    component EXT_GOLD_BRAM is
         port (
             clka      : in std_logic;
             rsta      : in std_logic;
@@ -83,7 +105,7 @@ begin
         p_reset        => p_reset_sys,
         p_CNN_start    => p_CNN_start_sys,
         p_CNN_ready    => p_CNN_ready_sys,
-        p_CNN_finished => p_CNN_finished_sys,
+        p_CNN_finished => p_CNN_finished_sys_tmp,
         p_mem_ctr      => mem_ctr_tmp,
         p_en_rv        => en_cnn_tmp,
         p_we_rv        => we_cnn_tmp,
@@ -105,6 +127,19 @@ begin
         rsta_busy => open
     );
 
+    -- External GOLDEN BRAM
+    EXT_GOLD_BRAM_inst : EXT_GOLD_BRAM
+    port map(
+        clka      => p_clk_sys,
+        rsta      => p_reset_sys,
+        ena       => en_gold_tmp,
+        wea(0)    => '0',
+        addra     => addr_gold_tmp,
+        dina      => (others => '0'),
+        douta     => dout_gold_tmp,
+        rsta_busy => open
+    );
+
     -- EXTERNAL BRAM CONTROLLER
     EXT_BRAM_CTR_inst : EXT_BRAM_CTR
     port map(
@@ -117,7 +152,13 @@ begin
         we_cnn   => we_cnn_tmp,
         addr_ext => addra_tmp,
         addr_cnn => addr_cnn_tmp,
-        mem_ctr  => mem_ctr_tmp
+        mem_ctr  => mem_ctr_tmp,
+        finish_cnn => p_CNN_finished_sys_tmp,
+        en_gold    => en_gold_tmp,
+        addr_gold  => addr_gold_tmp
     );
+
+    -- PORT Assignations
+    p_CNN_finished_sys <= p_CNN_finished_sys_tmp;
 
 end architecture;
