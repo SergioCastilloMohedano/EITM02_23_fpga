@@ -10,7 +10,10 @@ entity TOP_sys is
         p_CNN_start_sys    : in std_logic;
         p_CNN_ready_sys    : out std_logic;
         p_CNN_finished_sys : out std_logic;
-        p_trigger_sys      : in std_logic
+        p_trigger_sys      : in std_logic;
+        p_act_out          : in std_logic;
+        p_act              : out std_logic_vector (ACT_BITWIDTH - 1 downto 0);
+        p_act_ok           : out std_logic
     );
 end TOP_sys;
 
@@ -28,7 +31,14 @@ architecture structural of TOP_sys is
     signal p_CNN_finished_sys_tmp : std_logic;
     signal en_gold_tmp            : std_logic;
     signal addr_gold_tmp          : std_logic_vector (ACT_ADDRESSES - 1 downto 0);
-    signal dout_gold_tmp          : std_logic_vector(MEM_WORDLENGTH - 1 downto 0);
+    signal dout_gold_tmp          : std_logic_vector (MEM_WORDLENGTH - 1 downto 0);
+    signal act_gold_tmp           : std_logic_vector (ACT_BITWIDTH - 1 downto 0);
+
+    signal act_ok_tmp : std_logic;
+    signal act_out_tmp : std_logic_vector (ACT_BITWIDTH - 1 downto 0);
+    signal act_out_ctr_tmp : std_logic_vector (1 downto 0);
+    signal data_writeback : std_logic_vector (MEM_WORDLENGTH - 1 downto 0);
+    signal data_out_tmp : std_logic_vector (MEM_WORDLENGTH - 1 downto 0);
 
     -- COMPONENT DECLARATIONS
     -- ACCELERATOR
@@ -52,19 +62,21 @@ architecture structural of TOP_sys is
     -- EXTERNAL BRAM CONTROLLER
     component EXT_BRAM_CTR is
         port (
-            clk      : in std_logic;
-            reset    : in std_logic;
-            trigger  : in std_logic;
-            en_ext   : out std_logic;
-            en_cnn   : out std_logic;
-            we_ext   : out std_logic;
-            we_cnn   : out std_logic;
-            addr_ext : out std_logic_vector (EXT_ADDRESSES - 1 downto 0);
-            addr_cnn : out std_logic_vector (EXT_ADDRESSES - 1 downto 0);
-            mem_ctr  : out std_logic_vector (1 downto 0);
-            finish_cnn : in std_logic;
-            en_gold    : out std_logic;
-            addr_gold  : out std_logic_vector (ACT_ADDRESSES - 1 downto 0)
+            clk         : in std_logic;
+            reset       : in std_logic;
+            trigger     : in std_logic;
+            en_ext      : out std_logic;
+            en_cnn      : out std_logic;
+            we_ext      : out std_logic;
+            we_cnn      : out std_logic;
+            addr_ext    : out std_logic_vector (EXT_ADDRESSES - 1 downto 0);
+            addr_cnn    : out std_logic_vector (EXT_ADDRESSES - 1 downto 0);
+            mem_ctr     : out std_logic_vector (1 downto 0);
+            finish_cnn  : in std_logic;
+            en_gold     : out std_logic;
+            addr_gold   : out std_logic_vector (ACT_ADDRESSES - 1 downto 0);
+            act_out     : in std_logic;
+            act_out_ctr : out std_logic_vector (1 downto 0)
         );
     end component;
 
@@ -111,7 +123,7 @@ begin
         p_we_rv        => we_cnn_tmp,
         p_addr_rv      => addr_cnn_tmp,
         p_din_rv       => data_tmp,
-        p_dout_rv      => open
+        p_dout_rv      => data_writeback
     );
 
     -- External BRAM
@@ -122,7 +134,7 @@ begin
         ena       => en_ext_tmp,
         wea(0)    => we_ext_tmp,
         addra     => addra_tmp,
-        dina => (others => '0'),
+        dina      => data_writeback,
         douta     => data_tmp,
         rsta_busy => open
     );
@@ -155,10 +167,25 @@ begin
         mem_ctr  => mem_ctr_tmp,
         finish_cnn => p_CNN_finished_sys_tmp,
         en_gold    => en_gold_tmp,
-        addr_gold  => addr_gold_tmp
+        addr_gold  => addr_gold_tmp,
+        act_out    => p_act_out,
+        act_out_ctr => act_out_ctr_tmp
     );
 
     -- PORT Assignations
     p_CNN_finished_sys <= p_CNN_finished_sys_tmp;
+    
+    data_out_tmp <= data_tmp when ((act_out_ctr_tmp = "10") or (act_out_ctr_tmp = "01")) else
+                    (others => '0');
+    p_act <= data_out_tmp(31 downto 16) when (act_out_ctr_tmp = "01") else
+             data_out_tmp(15 downto 0)  when (act_out_ctr_tmp = "10") else
+             (others => '0');
+
+    act_gold_tmp <= dout_gold_tmp(31 downto 16) when (act_out_ctr_tmp = "01") else
+                    dout_gold_tmp(15 downto 0)  when (act_out_ctr_tmp = "10") else
+                    (others => '0');
+    
+    act_ok_tmp <= '1' when ((act_gold_tmp = p_act) and ((act_out_ctr_tmp = "10") or (act_out_ctr_tmp = "01"))) else '0';
+    p_act_ok   <= act_ok_tmp;
 
 end architecture;
