@@ -42,7 +42,7 @@ architecture behavioral of EXT_BRAM_CTR is
     signal addr_gold_reg, addr_gold_next : unsigned (ACT_ADDRESSES - 1 downto 0);
 
     signal act_out_ctr_reg : std_logic_vector (1 downto 0);
-    signal act_out_ctr_next : std_logic_vector (1 downto 0);
+    signal act_out_ctr_next : std_logic_vector (1 downto 0) := "00";
 
     -- Enumeration type for the states and state_type signals
     type state_type is (s_init, s_idle, s_loading, s_finished, s_writeback, s_comparing);
@@ -62,7 +62,7 @@ begin
     end process;
 
     -- control path : next state logic
-    asmd_ctrl : process (state_reg, trigger, addr_ext_reg, finish_cnn, addr_gold_reg, act_out, act_out_ctr_reg)
+    asmd_ctrl : process (state_reg, trigger, addr_ext_reg, addr_ext_reg_2, finish_cnn, addr_gold_reg, act_out, act_out_ctr_reg)
     begin
         case state_reg is
             when s_init =>
@@ -167,7 +167,7 @@ begin
     -- data path : status (inputs to control path to modify next state logic)
 
     -- data path : mux routing
-    data_mux : process (state_reg, addr_ext_reg, addr_wb_reg, addr_ifm_reg, addr_gold_reg, act_out_ctr_reg)
+    data_mux : process (state_reg, addr_ext_reg, addr_wb_reg, addr_ifm_reg, addr_gold_reg, act_out_ctr_reg, act_out)
     begin
         case state_reg is
             when s_init =>
@@ -198,7 +198,7 @@ begin
 
                 -- en_gold_tmp    <= '0';
                 -- addr_gold_next <= addr_gold_reg;
-                if (act_out_ctr_reg = "10") then
+                if ((act_out_ctr_reg = "10") and (act_out = '1')) then
                     addr_gold_next <= addr_gold_reg + 1;
                     addr_ext_next <= addr_ext_reg + 1;
                 else
@@ -206,7 +206,7 @@ begin
                     addr_ext_next <= addr_ext_reg;
                 end if;
                 
-                if (act_out_ctr_reg /= "00") then
+                if ((act_out_ctr_reg /= "00") and (act_out = '1')) then
                     en_ext_tmp <= '1';
                     en_gold_tmp <= '1';
                 else

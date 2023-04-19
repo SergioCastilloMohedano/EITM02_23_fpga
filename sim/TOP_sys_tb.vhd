@@ -22,7 +22,7 @@ architecture sim of TOP_sys_tb is
     signal start_tb    : std_logic := '0';
     signal ready_tb    : std_logic;
     signal finished_tb : std_logic;
-    signal trigger_tb  : std_logic;
+    signal trigger_tb  : std_logic := '0';
 
     signal act_out_tb : std_logic := '0';
     signal act_tb     : std_logic_vector (ACT_BITWIDTH - 1 downto 0);
@@ -69,7 +69,7 @@ begin
         -- First we load the input image, weights, biases and cfg. parameters
         -- into the internal memories of the accelerator.
         trigger_tb <= '1';
-        wait for clk_period;
+        wait for clk_period * 1000010;
         trigger_tb <= '0';
 
         wait for clk_period * (WB_NUM_WORDS + ACT_NUM_WORDS);
@@ -77,7 +77,7 @@ begin
         -- Second the accelerator starts computation, we wait until computation
         -- is finished (CNN_finished = '1')
         start_tb <= '1';
-        wait for clk_period;
+        wait for clk_period * 1000010;
         start_tb <= '0';
 
         -- Third we write back the activations resulting from CNN computation back
@@ -89,7 +89,7 @@ begin
         -- Lastly we output one activation at a time from EXT BRAM
         for i in 0 to ((ACT_NUM_WORDS * (MEM_WORDLENGTH/ACT_BITWIDTH)) - 1) loop
             act_out_tb <= '1';
-            wait for clk_period;
+            wait for clk_period * 1000010;
             act_out_tb <= '0';
             wait for clk_period;
         end loop; -- comparing
