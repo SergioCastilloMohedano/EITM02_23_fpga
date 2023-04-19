@@ -81,7 +81,7 @@ begin
 
     -- instantiate logic for dealing with all possible values of log2_r. r = (1, 2, 4) -> log2r = (0, 1, 2)
     gen_CEIL_LOG2_DIV : for i in 0 to hw_log2_r_PKG'length - 1 generate
-        inst_CEIL_LOG2_DIV : CEIL_LOG2_DIV
+        inst_CEIL_LOG2_DIV_X : CEIL_LOG2_DIV
         generic map(
             y => hw_log2_r_PKG(i) -- hw parameter, at synthesis time.
         )
@@ -91,7 +91,7 @@ begin
         );
     end generate gen_CEIL_LOG2_DIV;
 
-    p_mux_sel : process (r_log2_tmp)
+    p_mux_sel_X : process (r_log2_tmp)
     begin
         case r_log2_tmp is
             when hw_log2_r_PKG(0) => mux_sel <= 0;
@@ -99,9 +99,9 @@ begin
             when hw_log2_r_PKG(2) => mux_sel <= 2;
             when others       => mux_sel <= 0;
         end case;
-    end process p_mux_sel;
+    end process p_mux_sel_X;
 
-    p_mux : mux
+    p_mux_X : mux_work
     generic map(
         LEN => HYP_BITWIDTH,
         NUM => hw_log2_r_PKG'length

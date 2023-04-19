@@ -31,7 +31,7 @@ begin
 
     -- instantiate logic for dealing with all possible values of log2_EF. EF = (32, 16, 8) -> log2_EF = (5, 4, 3)
     gen_CEIL_LOG2_DIV : for i in 0 to hw_log2_EF_PKG'length - 1 generate
-        inst_CEIL_LOG2_DIV : CEIL_LOG2_DIV
+        inst_CEIL_LOG2_DIV_rr : CEIL_LOG2_DIV
         generic map(
             y => hw_log2_EF_PKG(i) -- hw parameter, at synthesis time.
         )
@@ -52,7 +52,7 @@ begin
     --     end loop;
     -- end procesS;
 
-    p_mux_sel : process (EF_log2_tmp)
+    p_mux_sel_rr : process (EF_log2_tmp)
     begin
         case EF_log2_tmp is
             when hw_log2_EF_PKG(0) => mux_sel <= 0;
@@ -60,9 +60,9 @@ begin
             when hw_log2_EF_PKG(2) => mux_sel <= 2;
             when others            => mux_sel        <= 0;
         end case;
-    end process p_mux_sel;
+    end process p_mux_sel_rr;
 
-    p_mux : mux
+    p_mux_rr : mux_work
     generic map(
         LEN => HYP_BITWIDTH,
         NUM => hw_log2_EF_PKG'length

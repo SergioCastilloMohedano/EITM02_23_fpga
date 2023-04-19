@@ -147,7 +147,7 @@ package thesis_pkg is
         );
     end component;
 
-    component mux is
+    component mux_work is
         generic (
             LEN : natural := HYP_BITWIDTH; -- Bits in each input (must be 8 due to data type definition being constrained to 8).
             NUM : natural                  -- Number of inputs
@@ -241,55 +241,3 @@ package body thesis_pkg is
 
     end function ceil_log2div;
 end thesis_pkg;
-
-------------------------------------------------------------------------------
--- Ceil of log 2 div
-------------------------------------------------------------------------------
-library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
-use work.thesis_pkg.all;
-
-entity CEIL_LOG2_DIV is
-    generic (
-        y : integer range 0 to 8 := 1
-    );
-    port (
-        x : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
-        z : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0)
-    );
-end CEIL_LOG2_DIV;
-
-architecture dataflow of CEIL_LOG2_DIV is
-
-    signal tmp : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
-
-begin
-
-    tmp <= ceil_log2div(x, y);
-    z   <= tmp;
-
-end architecture;
-
-------------------------------------------------------------------------------
--- Generic MUX
-------------------------------------------------------------------------------
-library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
-use work.thesis_pkg.all;
-
-entity mux is
-    generic (
-        LEN : natural := HYP_BITWIDTH;
-        NUM : natural); -- Number of inputs
-    port (
-        mux_in  : in hyp_array(0 to NUM - 1) := (others => (others => '0'));
-        mux_sel : in natural range 0 to NUM - 1;
-        mux_out : out std_logic_vector(LEN - 1 downto 0));
-end entity;
-
-architecture syn of mux is
-begin
-    mux_out <= mux_in(mux_sel);
-end architecture;
