@@ -9,10 +9,10 @@ end TOP_sys_tb;
 
 architecture sim of TOP_sys_tb is
 
-    constant clk_hz     : integer := 200e6; -- 200 MHz
+--    constant clk_hz     : integer := 200e6; -- 200 MHz
 --    constant clk_hz     : integer := 125e6; -- 125 MHz
 --    constant clk_hz     : integer := 1e6; -- 1 MHz
---    constant clk_hz     : integer := 50e6; -- 50 MHz
+    constant clk_hz     : integer := 50e6; -- 50 MHz
     constant clk_period : time    := 1 sec / clk_hz;
 
 
@@ -69,7 +69,7 @@ begin
         -- First we load the input image, weights, biases and cfg. parameters
         -- into the internal memories of the accelerator.
         trigger_tb <= '1';
-        wait for clk_period * 5010;
+        wait for clk_period * 510;
         trigger_tb <= '0';
 
         wait for clk_period * (WB_NUM_WORDS + ACT_NUM_WORDS);
@@ -77,7 +77,7 @@ begin
         -- Second the accelerator starts computation, we wait until computation
         -- is finished (CNN_finished = '1')
         start_tb <= '1';
-        wait for clk_period * 5010;
+        wait for clk_period * 510;
         start_tb <= '0';
 
         -- Third we write back the activations resulting from CNN computation back
@@ -87,12 +87,12 @@ begin
         wait for clk_period * 5;
 
         -- Lastly we output one activation at a time from EXT BRAM
-        for i in 0 to ((ACT_NUM_WORDS * (MEM_WORDLENGTH/ACT_BITWIDTH)) - 1) loop
+--        for i in 0 to ((ACT_NUM_WORDS * (MEM_WORDLENGTH/ACT_BITWIDTH)) - 1) loop
             act_out_tb <= '1';
-            wait for clk_period * 5010;
+            wait for clk_period * 510;
             act_out_tb <= '0';
-            wait for clk_period;
-        end loop; -- comparing
+--            wait for clk_period;
+--        end loop; -- comparing
 
         wait;
 

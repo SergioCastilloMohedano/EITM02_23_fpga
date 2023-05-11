@@ -17,7 +17,7 @@ architecture behav of DeBounce is
 
     --the below constants decide the working parameters.
     --the higher this is, the more longer time the user has to press the button.
-    constant COUNT_MAX : integer := 5000;--5000000; -- 100ms bouncing -> 100ms*50MHz = 5000000
+    constant COUNT_MAX : integer := 500;--5000000; -- 100ms bouncing -> 100ms*50MHz = 5000000
     --set it '1' if the button creates a high pulse when its pressed, otherwise '0'.
     constant BTN_ACTIVE : std_logic := '1';
 

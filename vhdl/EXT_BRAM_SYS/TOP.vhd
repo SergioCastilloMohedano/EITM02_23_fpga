@@ -13,7 +13,8 @@ entity TOP_sys is
         p_trigger_sys      : in std_logic;
         p_act_out          : in std_logic;
         p_act              : out std_logic_vector (ACT_BITWIDTH - 1 downto 0);
-        p_act_ok           : out std_logic
+        p_act_ok           : out std_logic;
+        p_clk_out          : out std_logic
     );
 end TOP_sys;
 
@@ -245,5 +246,7 @@ begin
 
     act_ok_tmp <= '1' when ((act_gold_tmp = p_act) and ((act_out_ctr_tmp = "10") or (act_out_ctr_tmp = "01"))) else '0';
     p_act_ok   <= act_ok_tmp;
+
+    p_clk_out <= p_clk_sys;
 
 end architecture;

@@ -96,7 +96,8 @@ begin
                 if ((addr_ext_reg = (ACT_NUM_WORDS - 1)) and (act_out_ctr_reg = "01")) then
                     state_next <= s_finished;
                 else
-                    state_next <= s_idle;
+--                     state_next <= s_idle;
+                      state_next <= s_comparing;
                 end if;
 
             when s_finished =>
@@ -186,33 +187,32 @@ begin
                 act_out_ctr_next <= "00";
 
             when s_idle =>
-                -- en_ext_tmp    <= '0';
                 we_ext_tmp    <= '0';
-                -- addr_ext_next <= addr_ext_reg;
-                
                 en_cnn_next   <= '0';
                 we_cnn_next   <= '0';
                 mem_ctr_next  <= "00";
                 addr_wb_next  <= (others => '0');
                 addr_ifm_next <= (others => '0');
 
-                -- en_gold_tmp    <= '0';
-                -- addr_gold_next <= addr_gold_reg;
-                if ((act_out_ctr_reg = "10") and (act_out = '1')) then
-                    addr_gold_next <= addr_gold_reg + 1;
-                    addr_ext_next <= addr_ext_reg + 1;
-                else
-                    addr_gold_next <= addr_gold_reg;
-                    addr_ext_next <= addr_ext_reg;
-                end if;
+                -- if ((act_out_ctr_reg = "10") and (act_out = '1')) then
+                --     addr_gold_next <= addr_gold_reg + 1;
+                --     addr_ext_next <= addr_ext_reg + 1;
+                -- else
+                --     addr_gold_next <= addr_gold_reg;
+                --     addr_ext_next <= addr_ext_reg;
+                -- end if;
                 
-                if ((act_out_ctr_reg /= "00") and (act_out = '1')) then
-                    en_ext_tmp <= '1';
-                    en_gold_tmp <= '1';
-                else
-                    en_ext_tmp <= '0';
-                    en_gold_tmp <= '0';
-                end if;
+                -- if ((act_out_ctr_reg /= "00") and (act_out = '1')) then
+                --     en_ext_tmp <= '1';
+                --     en_gold_tmp <= '1';
+                -- else
+                --     en_ext_tmp <= '0';
+                --     en_gold_tmp <= '0';
+                -- end if;
+                addr_gold_next <= addr_gold_reg;
+                addr_ext_next <= addr_ext_reg;
+                en_ext_tmp <= '0';
+                en_gold_tmp <= '0';
 
                 act_out_ctr_next <= act_out_ctr_reg;
 
@@ -263,11 +263,6 @@ begin
                 en_ext_tmp    <= '1';
                 we_ext_tmp    <= '0';
                 addr_ext_next <= addr_ext_reg;
-                -- if (act_out_ctr_reg = "10") then
-                --     addr_ext_next <= addr_ext_reg + 1;
-                -- else
-                --     addr_ext_next <= addr_ext_reg;
-                -- end if;
 
                 en_cnn_next   <= '0';
                 we_cnn_next   <= '0';
@@ -277,17 +272,24 @@ begin
 
                 en_gold_tmp    <= '1';
                 addr_gold_next <= addr_gold_reg;
-                -- if (act_out_ctr_reg = "10") then
-                --     addr_gold_next <= addr_gold_reg + 1;
-                -- else
-                --     addr_gold_next <= addr_gold_reg;
-                -- end if;
 
                 if (act_out_ctr_reg = "01") then
                     act_out_ctr_next <= "10";
                 else
                     act_out_ctr_next <= "01";
                 end if;
+
+                if (act_out_ctr_reg = "10") then
+                    addr_gold_next <= addr_gold_reg + 1;
+                    addr_ext_next <= addr_ext_reg + 1;
+                else
+                    addr_gold_next <= addr_gold_reg;
+                    addr_ext_next <= addr_ext_reg;
+                end if;
+                
+                en_ext_tmp <= '1';
+                en_gold_tmp <= '1';
+
 
             when s_finished =>
                 en_ext_tmp    <= '0';
