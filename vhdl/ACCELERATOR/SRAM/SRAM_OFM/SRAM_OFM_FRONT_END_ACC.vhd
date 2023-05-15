@@ -46,6 +46,7 @@ begin
 
     NoC_c_nez <= '0' when (NoC_c_tmp = 0) else '1'; --nez: not equal to zero
 
+    -- **** Sign extension ****
     ---- Case 1: r_max = 1 -> OFMAP_P_BITWIDTH = PSUM_BITWIDTH
     ---- There is no need to use sign extension.
     s_case_1 : if (OFMAP_P_BITWIDTH = PSUM_BITWIDTH) generate
