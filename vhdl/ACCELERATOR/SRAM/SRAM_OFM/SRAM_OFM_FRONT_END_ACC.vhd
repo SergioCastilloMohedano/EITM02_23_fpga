@@ -46,9 +46,20 @@ begin
 
     NoC_c_nez <= '0' when (NoC_c_tmp = 0) else '1'; --nez: not equal to zero
 
-    sign_extension <= (others => ofm_in_tmp(ofm_in_tmp'length - 1));
-    acc_addition   <= (ofm_in_tmp + ofm_sum_tmp);
-    ofm_BE_tmp_3   <= (sign_extension & ofm_in_tmp) when (NoC_c_nez = '0') else acc_addition; -- acc.
+    ---- Case 1: r_max = 1 -> OFMAP_P_BITWIDTH = PSUM_BITWIDTH
+    ---- There is no need to use sign extension.
+    s_case_1 : if (OFMAP_P_BITWIDTH = PSUM_BITWIDTH) generate
+        acc_addition   <= (ofm_in_tmp + ofm_sum_tmp);
+        ofm_BE_tmp_3   <= (ofm_in_tmp) when (NoC_c_nez = '0') else acc_addition; -- acc.
+    end generate;
+
+    ---- Case 2: r_max > 1 -> OFMAP_P_BITWIDTH > PSUM_BITWIDTH
+    ---- We use sign extension.
+    s_case_2 : if (OFMAP_P_BITWIDTH > PSUM_BITWIDTH) generate
+        sign_extension <= (others => ofm_in_tmp(ofm_in_tmp'length - 1));
+        acc_addition   <= (ofm_in_tmp + ofm_sum_tmp);
+        ofm_BE_tmp_3   <= (sign_extension & ofm_in_tmp) when (NoC_c_nez = '0') else acc_addition; -- acc.
+    end generate;
 
     -- **** Alignment of bias and ofmap ****
     ---- Case 1: f_ofmap > f_bias -> align bits are added to LSBs part of bias.

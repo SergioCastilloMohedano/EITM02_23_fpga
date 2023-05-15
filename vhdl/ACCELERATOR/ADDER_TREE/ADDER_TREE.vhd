@@ -78,10 +78,22 @@ architecture behavioral of ADDER_TREE is
 begin
 
     -- Input
-    loop_0 : for i in 0 to (X_PKG - 1) generate
-        sign_extension(i) <= (others => ofmap_p(i)(ofmap_p(i)'length - 1));
-        ofmap_p_bus_0(i)  <= sign_extension(i) & ofmap_p(i);
-    end generate loop_0;
+    ---- Case 1: r_max = 1 -> OFMAP_P_BITWIDTH = PSUM_BITWIDTH
+    ---- There is no need to use sign extension.
+    p_case_1 : if (OFMAP_P_BITWIDTH = PSUM_BITWIDTH) generate
+        loop_0 : for i in 0 to (X_PKG - 1) generate
+            ofmap_p_bus_0(i)  <= sign_extension(i) & ofmap_p(i);
+        end generate loop_0;
+    end generate;
+
+    ---- Case 2: r_max > 1 -> OFMAP_P_BITWIDTH > PSUM_BITWIDTH
+    ---- We use sign extension.
+    p_case_2 : if (OFMAP_P_BITWIDTH > PSUM_BITWIDTH) generate
+        loop_0 : for i in 0 to (X_PKG - 1) generate
+            sign_extension(i) <= (others => ofmap_p(i)(ofmap_p(i)'length - 1));
+            ofmap_p_bus_0(i)  <= sign_extension(i) & ofmap_p(i);
+        end generate loop_0;
+    end generate;
 
     -- Demux - Stage 1
     ofmap_p_bus_1 <= ofmap_p_bus_0 when (r_tmp = 1) else (others => (others => '0'));
